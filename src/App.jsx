@@ -1,336 +1,720 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  BadgeCheck,
-  ChevronDown,
-  ChevronRight,
-  CircleUserRound,
-  Headphones,
-  Heart,
-  Home,
-  LayoutGrid,
-  MapPin,
-  Menu,
-  PackageCheck,
-  Search,
-  ShieldCheck,
-  ShoppingCart,
-  Tag,
-  Truck,
+  BadgeCheck, ChevronDown, ChevronLeft, ChevronRight, CircleCheck,
+  CircleUserRound, CreditCard, Heart, Headphones, Home, LayoutGrid,
+  MapPin, Menu, Minus, PackageCheck, Plus, Search, ShieldCheck,
+  ShoppingBag, ShoppingCart, Smartphone, Star, Tag, Trash2, Truck,
   X
 } from 'lucide-react';
+import {
+  Link, NavLink, Route, Routes, useLocation, useNavigate,
+  useParams, useSearchParams
+} from 'react-router-dom';
+import { categories, getCategory, getProduct, money, products } from './data';
 
-const categories = [
-  { name: 'Smartphones', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=500&q=90' },
-  { name: 'Electronics', image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=500&q=90' },
-  { name: 'Fashion', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=500&q=90' },
-  { name: 'Shoes', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=500&q=90' },
-  { name: 'Home Appliances', image: 'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=500&q=90' },
-  { name: 'Beauty Products', image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=500&q=90' },
-  { name: 'Accessories', image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500&q=90' }
-];
-
-const products = [
-  {
-    id: 1,
-    name: 'Nova X5 Smartphone',
-    meta: '8GB RAM | 256GB',
-    price: 24999,
-    oldPrice: 32999,
-    discount: 24,
-    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=700&q=95'
-  },
-  {
-    id: 2,
-    name: 'ProBook 14 Laptop',
-    meta: 'Intel Core i5 | 8GB | 512GB',
-    price: 54999,
-    oldPrice: 69999,
-    discount: 21,
-    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=700&q=95'
-  },
-  {
-    id: 3,
-    name: 'Tune Pro Wireless Earbuds',
-    meta: '36h Charging Case',
-    price: 1800,
-    oldPrice: 2999,
-    discount: 40,
-    image: 'https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?auto=format&fit=crop&w=700&q=95'
-  },
-  {
-    id: 4,
-    name: 'Urban Step Sneakers',
-    meta: 'Unisex',
-    price: 3499,
-    oldPrice: 4999,
-    discount: 30,
-    image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=95'
-  },
-  {
-    id: 5,
-    name: 'HomeChef Air Fryer',
-    meta: '5.5L | 1700W',
-    price: 12999,
-    oldPrice: 16999,
-    discount: 24,
-    image: 'https://images.unsplash.com/photo-1585515320310-259814833e62?auto=format&fit=crop&w=700&q=95'
-  }
-];
-
-const navItems = ['Smartphones', 'Electronics', 'Fashion', 'Shoes', 'Home Appliances', 'Beauty', 'Accessories'];
-
-const formatMoney = (value) => new Intl.NumberFormat('en-KE').format(value);
+const discount = (product) =>
+  Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100);
 
 function App() {
-  const [cartCount, setCartCount] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [cart, setCart] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('zawadimart-cart')) || []; }
+    catch { return []; }
+  });
   const [wishlist, setWishlist] = useState([]);
-  const [query, setQuery] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const location = useLocation();
 
-  const filteredProducts = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return products;
-    return products.filter((product) =>
-      (product.name + ' ' + product.meta).toLowerCase().includes(normalized)
-    );
-  }, [query]);
+  useEffect(() => {
+    localStorage.setItem('zawadimart-cart', JSON.stringify(cart));
+  }, [cart]);
 
-  const addToCart = (product) => {
-    setCartCount((count) => count + 1);
-    setToast(product.name + ' added to cart');
-    window.setTimeout(() => setToast(''), 1800);
+  useEffect(() => {
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.pathname]);
+
+  const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  const cartRows = cart
+    .map((item) => ({ ...item, product: getProduct(item.id) }))
+    .filter((item) => item.product);
+  const subtotal = cartRows.reduce((sum, item) => sum + item.product.price * item.qty, 0);
+
+  const notify = (message) => {
+    setToast(message);
+    window.clearTimeout(window.__zawadiToast);
+    window.__zawadiToast = window.setTimeout(() => setToast(''), 1900);
   };
 
-  const toggleWishlist = (productId) => {
+  const addToCart = (id, qty = 1) => {
+    const product = getProduct(id);
+    setCart((current) => {
+      const existing = current.find((item) => item.id === id);
+      return existing
+        ? current.map((item) => item.id === id ? { ...item, qty: Math.min(item.qty + qty, product.stock) } : item)
+        : [...current, { id, qty: Math.min(qty, product.stock) }];
+    });
+    notify(`${product.name} added to cart`);
+  };
+
+  const setQty = (id, qty) => {
+    if (qty <= 0) {
+      setCart((current) => current.filter((item) => item.id !== id));
+      return;
+    }
+    const product = getProduct(id);
+    setCart((current) => current.map((item) =>
+      item.id === id ? { ...item, qty: Math.min(qty, product.stock) } : item
+    ));
+  };
+
+  const removeFromCart = (id) =>
+    setCart((current) => current.filter((item) => item.id !== id));
+
+  const toggleWishlist = (id) => {
     setWishlist((current) =>
-      current.includes(productId)
-        ? current.filter((id) => id !== productId)
-        : [...current, productId]
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
     );
   };
+
+  const shared = { addToCart, wishlist, toggleWishlist };
 
   return (
     <div className="app-shell">
-      {toast && <div className="toast">{toast}</div>}
+      {toast && <div className="toast"><CircleCheck size={17} />{toast}</div>}
+      <Header cartCount={cartCount} menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
 
+      <Routes>
+        <Route path="/" element={<HomePage {...shared} />} />
+        <Route path="/shop" element={<ShopPage {...shared} />} />
+        <Route path="/category/:slug" element={<CategoryPage {...shared} />} />
+        <Route path="/product/:id" element={<ProductPage {...shared} />} />
+        <Route path="/deals" element={<DealsPage {...shared} />} />
+        <Route path="/cart" element={
+          <CartPage rows={cartRows} subtotal={subtotal} setQty={setQty} removeFromCart={removeFromCart} />
+        } />
+        <Route path="/checkout" element={
+          <CheckoutPage rows={cartRows} subtotal={subtotal} clearCart={() => setCart([])} />
+        } />
+        <Route path="/order-success" element={<OrderSuccessPage />} />
+        <Route path="/track-order" element={<TrackOrderPage />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+
+      <Footer />
+      <MobileBottomNav cartCount={cartCount} />
+    </div>
+  );
+}
+
+function Header({ cartCount, menuOpen, setMenuOpen }) {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+
+  const submitSearch = (event) => {
+    event.preventDefault();
+    if (query.trim()) navigate(`/shop?q=${encodeURIComponent(query.trim())}`);
+    else navigate('/shop');
+  };
+
+  return (
+    <>
       <div className="utility-bar">
         <div className="container utility-inner">
           <span>Kenya's trusted online marketplace</span>
           <div className="utility-links">
-            <a href="#support">Help</a>
-            <span>|</span>
-            <a href="#orders">Track Order</a>
-            <span>|</span>
-            <a href="#sell">Sell on ZawadiMart</a>
+            <Link to="/track-order">Track Order</Link>
+            <span>•</span>
+            <Link to="/account">Help & Account</Link>
+            <span>•</span>
+            <span>Sell on ZawadiMart</span>
           </div>
         </div>
       </div>
 
       <header className="main-header">
         <div className="container header-row">
-          <button className="icon-button mobile-only" onClick={() => setMenuOpen(true)} aria-label="Open menu">
-            <Menu size={22} />
+          <button className="icon-button mobile-only" onClick={() => setMenuOpen(true)} aria-label="Open navigation">
+            <Menu size={23} />
           </button>
 
-          <a className="brand" href="#" aria-label="ZawadiMart home">
-            <ShoppingCart className="brand-cart" size={29} strokeWidth={2.4} />
+          <Link className="brand" to="/" aria-label="ZawadiMart home">
+            <ShoppingCart className="brand-cart" size={28} />
             <span>Zawadi</span><strong>Mart</strong>
-          </a>
+          </Link>
 
-          <label className="desktop-search">
+          <form className="desktop-search" onSubmit={submitSearch}>
             <Search size={18} />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search for products, brands and more..."
-            />
-          </label>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search for products, brands and more..." />
+            <button type="submit">Search</button>
+          </form>
 
-          <button className="header-action location-action">
+          <div className="header-action location-action">
             <MapPin size={19} />
-            <span>
-              <small>Deliver to</small>
-              <strong>Nairobi</strong>
-            </span>
-          </button>
+            <span><small>Deliver to</small><strong>Nairobi</strong></span>
+          </div>
 
-          <button className="header-action account-action">
+          <Link className="header-action" to="/account">
             <CircleUserRound size={20} />
-            <span>
-              <small>Hello, Sign in</small>
-              <strong>Account</strong>
-            </span>
-          </button>
+            <span><small>Hello, sign in</small><strong>Account</strong></span>
+          </Link>
 
-          <button className="cart-button" aria-label="Shopping cart">
+          <Link className="cart-button" to="/cart" aria-label="Shopping cart">
             <ShoppingCart size={25} />
             <span className="cart-badge">{cartCount}</span>
-          </button>
+          </Link>
         </div>
 
         <div className="container mobile-search-wrap">
-          <label className="mobile-search">
+          <form className="mobile-search" onSubmit={submitSearch}>
             <Search size={17} />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search for products, brands..."
-            />
-          </label>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search products, brands..." />
+          </form>
         </div>
       </header>
 
       <nav className="category-nav">
         <div className="container nav-inner">
-          <button className="all-categories">
-            <Menu size={18} />
-            <span>All Categories</span>
-            <ChevronDown size={15} />
-          </button>
-          {navItems.map((item) => (
-            <a key={item} href="#categories">{item}</a>
+          <Link className="all-categories" to="/shop">
+            <Menu size={18} /><span>All Categories</span><ChevronDown size={15} />
+          </Link>
+          {categories.slice(0, 7).map((category) => (
+            <NavLink key={category.slug} to={`/category/${category.slug}`}>{category.name}</NavLink>
           ))}
-          <a className="deals-link" href="#deals">Deals</a>
+          <NavLink className="deals-link" to="/deals">Deals</NavLink>
         </div>
       </nav>
 
-      <main>
-        <section className="container hero-wrap">
-          <div className="hero">
-            <div className="hero-copy">
-              <h1>A Brighter Way<br />to Shop in <span>Kenya</span></h1>
-              <p>Great products. Better prices. Happier you.</p>
-              <a href="#deals" className="shop-button">
-                Shop Now <ChevronRight size={17} />
-              </a>
-            </div>
+      <div className={`mobile-drawer ${menuOpen ? 'open' : ''}`}>
+        <button className="drawer-overlay" onClick={() => setMenuOpen(false)} aria-label="Close navigation" />
+        <aside className="drawer-panel">
+          <div className="drawer-head">
+            <Link className="brand" to="/">
+              <ShoppingCart size={24} /><span>Zawadi</span><strong>Mart</strong>
+            </Link>
+            <button className="icon-button" onClick={() => setMenuOpen(false)} aria-label="Close navigation"><X /></button>
+          </div>
+          <Link to="/shop"><LayoutGrid size={18} />All Categories</Link>
+          {categories.map((category) => (
+            <Link key={category.slug} to={`/category/${category.slug}`}><span>{category.icon}</span>{category.name}</Link>
+          ))}
+          <Link className="drawer-deal" to="/deals"><Tag size={18} />Deals & Offers</Link>
+          <Link to="/track-order"><PackageCheck size={18} />Track Order</Link>
+          <Link to="/account"><CircleUserRound size={18} />My Account</Link>
+        </aside>
+      </div>
+    </>
+  );
+}
 
-            <div className="skyline-art" aria-hidden="true">
-              <span className="building b1" />
-              <span className="building b2" />
-              <span className="building b3" />
-              <span className="building b4" />
-              <span className="building b5" />
-              <span className="building b6" />
+function HomePage(props) {
+  return (
+    <main>
+      <section className="container hero-wrap">
+        <div className="hero">
+          <div className="hero-copy">
+            <span className="eyebrow">EVERYDAY VALUE • FAST DELIVERY</span>
+            <h1>A Brighter Way<br />to Shop in <span>Kenya</span></h1>
+            <p>Discover useful products, fair prices and a checkout built for how Kenya shops.</p>
+            <div className="hero-actions">
+              <Link to="/shop" className="primary-button">Shop now <ChevronRight size={17} /></Link>
+              <Link to="/deals" className="secondary-button">View deals</Link>
             </div>
-
+          </div>
+          <div className="hero-photo-wrap">
             <img
-              className="hero-person"
-              src="https://images.unsplash.com/photo-1758525223013-290ae3620f53?auto=format&fit=crop&w=1200&q=90"
-              alt="Smiling shopper carrying shopping bags"
+              className="hero-photo"
+              src="https://images.unsplash.com/photo-1618375531912-867984bdfd87?auto=format&fit=crop&w=1200&q=90"
+              alt="Happy shopper with shopping bags"
             />
-            <div className="hero-script">Shop Local.<br />Live Better.</div>
           </div>
-        </section>
+          <div className="hero-note">Shop local.<br />Live better.</div>
+          <div className="skyline" aria-hidden="true"><span/><span/><span/><span/><span/></div>
+        </div>
+      </section>
 
-        <section className="container trust-strip" aria-label="Shopping benefits">
-          <div className="trust-item">
-            <span className="trust-icon"><Truck /></span>
-            <span><strong>Free Delivery</strong><small>On select orders</small></span>
-          </div>
-          <div className="trust-item">
-            <span className="trust-icon"><ShieldCheck /></span>
-            <span><strong>Secure Payments</strong><small>100% safe</small></span>
-          </div>
-          <div className="trust-item">
-            <span className="trust-icon"><Headphones /></span>
-            <span><strong>24/7 Support</strong><small>We're here for you</small></span>
-          </div>
-          <div className="trust-item">
-            <span className="trust-icon"><BadgeCheck /></span>
-            <span><strong>Trusted by Kenyans</strong><small>Quality you can count on</small></span>
-          </div>
-        </section>
+      <TrustStrip />
 
-        <section id="categories" className="container section-block">
-          <div className="section-heading">
-            <h2>Top Categories</h2>
-            <a href="#categories">View All <ChevronRight size={16} /></a>
-          </div>
+      <section className="container section-block">
+        <SectionHeading title="Top Categories" link="/shop" label="View all" />
+        <div className="categories-grid">
+          {categories.map((category) => (
+            <Link className="category-card" to={`/category/${category.slug}`} key={category.slug}>
+              <div className="category-image"><img src={category.image} alt={category.name} /></div>
+              <span>{category.name}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-          <div className="categories-grid">
-            {categories.map((category) => (
-              <button className="category-card" key={category.name}>
-                <div className="category-image">
-                  <img src={category.image} alt="" />
+      <section className="container section-block">
+        <SectionHeading title="Featured Deals" link="/deals" label="View all deals" />
+        <ProductGrid products={products.slice(0, 10)} {...props} />
+      </section>
+
+      <section className="container promo-grid">
+        <article className="promo-card green">
+          <div>
+            <span>HOME UPGRADE</span>
+            <h3>Make everyday living easier.</h3>
+            <p>Kitchen and home essentials at practical prices.</p>
+            <Link to="/category/home-appliances">Shop home <ChevronRight size={15}/></Link>
+          </div>
+          <ShoppingBag size={88} />
+        </article>
+        <article className="promo-card dark">
+          <div>
+            <span>TECH PICKS</span>
+            <h3>Smart gear for work and play.</h3>
+            <p>Phones, laptops, accessories and gaming essentials.</p>
+            <Link to="/category/electronics">Shop tech <ChevronRight size={15}/></Link>
+          </div>
+          <Smartphone size={88} />
+        </article>
+      </section>
+
+      <section className="container section-block home-last">
+        <SectionHeading title="Popular Right Now" link="/shop" label="Browse more" />
+        <ProductGrid products={products.slice(18, 28)} {...props} />
+      </section>
+    </main>
+  );
+}
+
+function TrustStrip() {
+  const benefits = [
+    [Truck, 'Fast Delivery', 'Across Nairobi & selected towns'],
+    [ShieldCheck, 'Secure Checkout', 'Protected payment experience'],
+    [Headphones, 'Helpful Support', 'Assistance when you need it'],
+    [BadgeCheck, 'Quality Selection', 'Products chosen with care'],
+  ];
+  return (
+    <section className="container trust-strip">
+      {benefits.map(([Icon, title, text]) => (
+        <div className="trust-item" key={title}>
+          <span className="trust-icon"><Icon /></span>
+          <span><strong>{title}</strong><small>{text}</small></span>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function SectionHeading({ title, link, label }) {
+  return (
+    <div className="section-heading">
+      <h2>{title}</h2>
+      <Link to={link}>{label} <ChevronRight size={16} /></Link>
+    </div>
+  );
+}
+
+function ProductGrid({ products: items, addToCart, wishlist, toggleWishlist }) {
+  if (!items.length) return <div className="empty-state">No matching products were found.</div>;
+  return (
+    <div className="products-grid">
+      {items.map((product) => (
+        <ProductCard key={product.id} product={product} addToCart={addToCart} wishlist={wishlist} toggleWishlist={toggleWishlist} />
+      ))}
+    </div>
+  );
+}
+
+function ProductCard({ product, addToCart, wishlist, toggleWishlist }) {
+  return (
+    <article className="product-card">
+      <Link className="product-media" to={`/product/${product.id}`}>
+        <span className="discount-badge">-{discount(product)}%</span>
+        <button
+          className={`heart-button ${wishlist.includes(product.id) ? 'active' : ''}`}
+          onClick={(e) => { e.preventDefault(); toggleWishlist(product.id); }}
+          aria-label="Save product"
+        >
+          <Heart size={17} fill={wishlist.includes(product.id) ? 'currentColor' : 'none'} />
+        </button>
+        <img src={product.image} alt={product.name} loading="lazy" />
+      </Link>
+      <div className="product-info">
+        <Link to={`/product/${product.id}`}><h3>{product.name}</h3></Link>
+        <div className="rating-line"><Star size={12} fill="currentColor" />{product.rating}<span>({product.reviews})</span></div>
+        <div className="price-line"><strong>{money(product.price)}</strong><del>{money(product.oldPrice)}</del></div>
+        <button className="add-button" onClick={() => addToCart(product.id)}>Add to Cart</button>
+      </div>
+    </article>
+  );
+}
+
+function ShopPage(props) {
+  const [searchParams] = useSearchParams();
+  const q = (searchParams.get('q') || '').toLowerCase();
+  const [sort, setSort] = useState('featured');
+  const [category, setCategory] = useState('all');
+
+  const filtered = useMemo(() => {
+    let list = products.filter((product) =>
+      (!q || (product.name + ' ' + product.description).toLowerCase().includes(q)) &&
+      (category === 'all' || product.category === category)
+    );
+    if (sort === 'low') list = [...list].sort((a, b) => a.price - b.price);
+    if (sort === 'high') list = [...list].sort((a, b) => b.price - a.price);
+    if (sort === 'rating') list = [...list].sort((a, b) => b.rating - a.rating);
+    return list;
+  }, [q, sort, category]);
+
+  return (
+    <main className="container page-shell">
+      <Breadcrumb items={[['Home','/'],['Shop']]} />
+      <div className="catalog-heading">
+        <div><span className="page-kicker">ZAWADIMART CATALOG</span><h1>{q ? `Results for “${searchParams.get('q')}”` : 'Shop all products'}</h1><p>{filtered.length} products available</p></div>
+        <select value={sort} onChange={(e) => setSort(e.target.value)}>
+          <option value="featured">Sort: Featured</option>
+          <option value="low">Price: Low to high</option>
+          <option value="high">Price: High to low</option>
+          <option value="rating">Customer rating</option>
+        </select>
+      </div>
+      <div className="filter-chips">
+        <button className={category === 'all' ? 'active' : ''} onClick={() => setCategory('all')}>All</button>
+        {categories.map((item) => (
+          <button className={category === item.slug ? 'active' : ''} key={item.slug} onClick={() => setCategory(item.slug)}>
+            {item.name}
+          </button>
+        ))}
+      </div>
+      <ProductGrid products={filtered} {...props} />
+    </main>
+  );
+}
+
+function CategoryPage(props) {
+  const { slug } = useParams();
+  const category = getCategory(slug);
+  if (!category) return <NotFoundPage />;
+  const items = products.filter((product) => product.category === slug);
+  return (
+    <main className="container page-shell">
+      <Breadcrumb items={[['Home','/'],['Shop','/shop'],[category.name]]} />
+      <section className="category-hero">
+        <div><span className="page-kicker">{category.icon} CURATED CATEGORY</span><h1>{category.name}</h1><p>Explore our latest {category.name.toLowerCase()} picks with prices shown in Kenyan shillings.</p></div>
+        <img src={category.image} alt={category.name} />
+      </section>
+      <ProductGrid products={items} {...props} />
+    </main>
+  );
+}
+
+function DealsPage(props) {
+  const deals = [...products].sort((a, b) => discount(b) - discount(a));
+  return (
+    <main className="container page-shell">
+      <Breadcrumb items={[['Home','/'],['Deals']]} />
+      <div className="deal-banner">
+        <span>LIMITED-TIME SAVINGS</span>
+        <h1>Deals worth adding to cart.</h1>
+        <p>Browse discounted picks across tech, fashion, beauty, home and more.</p>
+      </div>
+      <ProductGrid products={deals} {...props} />
+    </main>
+  );
+}
+
+function ProductPage({ addToCart, wishlist, toggleWishlist }) {
+  const { id } = useParams();
+  const product = getProduct(id);
+  const [qty, setQty] = useState(1);
+  if (!product) return <NotFoundPage />;
+  const category = getCategory(product.category);
+  const related = products.filter((item) => item.category === product.category && item.id !== product.id).slice(0, 4);
+
+  return (
+    <main className="container page-shell">
+      <Breadcrumb items={[['Home','/'],[category.name,`/category/${category.slug}`],[product.name]]} />
+      <section className="product-detail">
+        <div className="product-gallery">
+          <span className="deal-pill">Save {discount(product)}%</span>
+          <img src={product.image} alt={product.name} />
+        </div>
+        <div className="product-copy">
+          <span className="page-kicker">{category.name}</span>
+          <h1>{product.name}</h1>
+          <div className="detail-rating"><Star size={16} fill="currentColor" /> {product.rating} <span>{product.reviews} reviews</span></div>
+          <div className="detail-price"><strong>{money(product.price)}</strong><del>{money(product.oldPrice)}</del></div>
+          <p>{product.description}</p>
+          <div className="stock-line"><CircleCheck size={17}/> In stock — {product.stock} units available</div>
+          <div className="detail-actions">
+            <div className="qty-picker">
+              <button onClick={() => setQty(Math.max(1, qty - 1))}><Minus size={16}/></button>
+              <span>{qty}</span>
+              <button onClick={() => setQty(Math.min(product.stock, qty + 1))}><Plus size={16}/></button>
+            </div>
+            <button className="detail-cart" onClick={() => addToCart(product.id, qty)}><ShoppingCart size={18}/> Add to cart</button>
+            <button className={`detail-heart ${wishlist.includes(product.id) ? 'active' : ''}`} onClick={() => toggleWishlist(product.id)}><Heart size={19} fill={wishlist.includes(product.id) ? 'currentColor' : 'none'} /></button>
+          </div>
+          <div className="purchase-benefits">
+            <span><Truck size={17}/><b>Delivery</b><small>Calculated at checkout</small></span>
+            <span><ShieldCheck size={17}/><b>Secure</b><small>Protected checkout</small></span>
+            <span><PackageCheck size={17}/><b>Returns</b><small>Easy support process</small></span>
+          </div>
+        </div>
+      </section>
+      <section className="section-block">
+        <SectionHeading title="You may also like" link={`/category/${category.slug}`} label="More in category" />
+        <ProductGrid products={related} addToCart={addToCart} wishlist={wishlist} toggleWishlist={toggleWishlist} />
+      </section>
+    </main>
+  );
+}
+
+function CartPage({ rows, subtotal, setQty, removeFromCart }) {
+  const delivery = subtotal >= 10000 ? 0 : (subtotal ? 350 : 0);
+  return (
+    <main className="container page-shell">
+      <Breadcrumb items={[['Home','/'],['Cart']]} />
+      <div className="page-title"><h1>Your cart</h1><p>{rows.length ? 'Review your items before checkout.' : 'Your cart is ready for something good.'}</p></div>
+      {!rows.length ? (
+        <div className="empty-cart">
+          <ShoppingCart size={50}/><h2>Your cart is empty</h2><p>Explore the store and add something you like.</p><Link className="primary-button" to="/shop">Start shopping</Link>
+        </div>
+      ) : (
+        <div className="cart-layout">
+          <section className="cart-list">
+            {rows.map(({ product, qty }) => (
+              <article className="cart-row" key={product.id}>
+                <Link to={`/product/${product.id}`}><img src={product.image} alt={product.name}/></Link>
+                <div className="cart-copy">
+                  <Link to={`/product/${product.id}`}><h3>{product.name}</h3></Link>
+                  <span>In stock</span>
+                  <strong>{money(product.price)}</strong>
                 </div>
-                <span>{category.name}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section id="deals" className="container section-block deals-section">
-          <div className="section-heading">
-            <h2>Featured Deals</h2>
-            <a href="#deals">View All Deals <ChevronRight size={16} /></a>
-          </div>
-
-          <div className="products-grid">
-            {filteredProducts.length ? filteredProducts.map((product) => (
-              <article className="product-card" key={product.id}>
-                <div className="product-media">
-                  <span className="discount-badge">-{product.discount}%</span>
-                  <button
-                    className={'heart-button ' + (wishlist.includes(product.id) ? 'active' : '')}
-                    onClick={() => toggleWishlist(product.id)}
-                    aria-label="Toggle wishlist"
-                  >
-                    <Heart size={17} fill={wishlist.includes(product.id) ? 'currentColor' : 'none'} />
-                  </button>
-                  <img src={product.image} alt={product.name} />
-                </div>
-                <div className="product-info">
-                  <h3>{product.name}</h3>
-                  <p>{product.meta}</p>
-                  <div className="price-line">
-                    <strong>KES {formatMoney(product.price)}</strong>
-                    <del>KES {formatMoney(product.oldPrice)}</del>
+                <div className="cart-controls">
+                  <div className="qty-picker">
+                    <button onClick={() => setQty(product.id, qty - 1)}><Minus size={15}/></button>
+                    <span>{qty}</span>
+                    <button onClick={() => setQty(product.id, qty + 1)}><Plus size={15}/></button>
                   </div>
-                  <button className="add-button" onClick={() => addToCart(product)}>
-                    Add to Cart
-                  </button>
+                  <button className="remove-button" onClick={() => removeFromCart(product.id)}><Trash2 size={16}/> Remove</button>
                 </div>
               </article>
-            )) : (
-              <div className="empty-search">No products found. Try a different search.</div>
-            )}
-          </div>
-        </section>
-      </main>
-
-      <nav className="mobile-bottom-nav">
-        <a className="active" href="#"><Home size={19} /><span>Home</span></a>
-        <a href="#categories"><LayoutGrid size={19} /><span>Categories</span></a>
-        <a href="#deals"><Tag size={19} /><span>Deals</span></a>
-        <a href="#account"><CircleUserRound size={19} /><span>Account</span></a>
-      </nav>
-
-      <div className={'mobile-drawer ' + (menuOpen ? 'open' : '')}>
-        <div className="drawer-panel">
-          <div className="drawer-head">
-            <a className="brand" href="#">
-              <ShoppingCart className="brand-cart" size={25} />
-              <span>Zawadi</span><strong>Mart</strong>
-            </a>
-            <button className="icon-button" onClick={() => setMenuOpen(false)} aria-label="Close menu">
-              <X size={22} />
-            </button>
-          </div>
-          <a href="#categories" onClick={() => setMenuOpen(false)}>All Categories</a>
-          {navItems.map((item) => (
-            <a key={item} href="#categories" onClick={() => setMenuOpen(false)}>{item}</a>
-          ))}
-          <a className="drawer-deal" href="#deals" onClick={() => setMenuOpen(false)}>Deals</a>
-          <div className="drawer-meta">
-            <PackageCheck size={18} />
-            <span>Track your order</span>
-          </div>
+            ))}
+          </section>
+          <OrderSummary subtotal={subtotal} delivery={delivery} checkout />
         </div>
-        <button className="drawer-overlay" onClick={() => setMenuOpen(false)} aria-label="Close menu overlay" />
+      )}
+    </main>
+  );
+}
+
+function OrderSummary({ subtotal, delivery, checkout = false }) {
+  const total = subtotal + delivery;
+  return (
+    <aside className="order-summary">
+      <h2>Order summary</h2>
+      <div><span>Subtotal</span><strong>{money(subtotal)}</strong></div>
+      <div><span>Delivery</span><strong>{delivery ? money(delivery) : 'FREE'}</strong></div>
+      <div className="summary-total"><span>Total</span><strong>{money(total)}</strong></div>
+      {checkout && <Link className="checkout-button" to="/checkout">Proceed to checkout <ChevronRight size={17}/></Link>}
+      <p><ShieldCheck size={15}/> Secure checkout experience</p>
+    </aside>
+  );
+}
+
+function CheckoutPage({ rows, subtotal, clearCart }) {
+  const navigate = useNavigate();
+  const [method, setMethod] = useState('mpesa');
+  const [error, setError] = useState('');
+  const delivery = subtotal >= 10000 ? 0 : (subtotal ? 350 : 0);
+
+  const submit = (event) => {
+    event.preventDefault();
+    if (!rows.length) return navigate('/cart');
+    const form = new FormData(event.currentTarget);
+    if (!form.get('fullName') || !form.get('phone') || !form.get('address')) {
+      setError('Please complete your contact and delivery details.');
+      return;
+    }
+    if (method === 'mpesa' && !/^((\+?254)|0)?7\d{8}$/.test(String(form.get('mpesa')).replace(/\s/g,''))) {
+      setError('Enter a valid Kenyan M-Pesa phone number.');
+      return;
+    }
+    if (method === 'card') {
+      const card = String(form.get('cardNumber')).replace(/\s/g,'');
+      if (card.length < 13 || !form.get('cardName') || String(form.get('cvc')).length < 3) {
+        setError('Please complete the card details correctly.');
+        return;
+      }
+    }
+    clearCart();
+    navigate('/order-success', { state: { method, total: subtotal + delivery } });
+  };
+
+  if (!rows.length) {
+    return (
+      <main className="container page-shell">
+        <div className="empty-cart"><ShoppingBag size={52}/><h2>No items to checkout</h2><p>Add products to your cart first.</p><Link className="primary-button" to="/shop">Browse products</Link></div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="container page-shell">
+      <Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]} />
+      <div className="checkout-title"><div><span className="page-kicker">SECURE CHECKOUT</span><h1>Complete your order</h1><p>Delivery and payment details</p></div><ShieldCheck size={36}/></div>
+      <form className="checkout-layout" onSubmit={submit}>
+        <div className="checkout-forms">
+          <section className="form-card">
+            <div className="form-card-title"><span>1</span><div><h2>Contact & delivery</h2><p>Where should we deliver your order?</p></div></div>
+            <div className="form-grid">
+              <label>Full name<input name="fullName" placeholder="e.g. Amina Wanjiku" /></label>
+              <label>Phone number<input name="phone" inputMode="tel" placeholder="0712 345 678" /></label>
+              <label className="wide">Email address<input name="email" type="email" placeholder="you@example.com" /></label>
+              <label className="wide">Delivery address<input name="address" placeholder="Estate, street / building, house number" /></label>
+              <label>County<select name="county" defaultValue="Nairobi"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label>
+              <label>Town / area<input name="town" placeholder="e.g. Kilimani" /></label>
+            </div>
+          </section>
+
+          <section className="form-card">
+            <div className="form-card-title"><span>2</span><div><h2>Payment method</h2><p>Choose how you would like to pay.</p></div></div>
+            <div className="payment-tabs">
+              <button type="button" className={method === 'mpesa' ? 'active' : ''} onClick={() => setMethod('mpesa')}><Smartphone size={20}/><span><b>M-Pesa</b><small>Pay from your phone</small></span></button>
+              <button type="button" className={method === 'card' ? 'active' : ''} onClick={() => setMethod('card')}><CreditCard size={20}/><span><b>Card</b><small>Visa / Mastercard</small></span></button>
+            </div>
+
+            {method === 'mpesa' ? (
+              <div className="payment-panel">
+                <div className="mpesa-mark">M-PESA</div>
+                <label>M-Pesa phone number<input name="mpesa" inputMode="tel" placeholder="0712 345 678" /></label>
+                <p>An STK Push would be sent to this number after a live payment gateway is connected.</p>
+              </div>
+            ) : (
+              <div className="payment-panel">
+                <div className="card-visual"><span>ZawadiMart</span><CreditCard/><small>Secure card checkout</small></div>
+                <div className="form-grid card-fields">
+                  <label className="wide">Name as it appears on the card<input name="cardName" autoComplete="cc-name" placeholder="CARDHOLDER NAME" /></label>
+                  <label className="wide">Card number<input name="cardNumber" autoComplete="cc-number" inputMode="numeric" placeholder="1234 5678 9012 3456" maxLength="23" /></label>
+                  <label>Expiry date<input name="expiry" autoComplete="cc-exp" placeholder="MM / YY" maxLength="7" /></label>
+                  <label>CVC<input name="cvc" autoComplete="cc-csc" inputMode="numeric" placeholder="123" maxLength="4" /></label>
+                </div>
+                <p>Card details are not stored by this frontend. Connect a PCI-compliant payment gateway for live processing.</p>
+              </div>
+            )}
+          </section>
+
+          {error && <div className="form-error">{error}</div>}
+          <div className="demo-note"><ShieldCheck size={17}/><span><strong>Frontend preview:</strong> this checkout simulates an order confirmation. No real M-Pesa or card charge is made until a live payment backend is integrated.</span></div>
+        </div>
+
+        <div>
+          <aside className="checkout-items">
+            <h2>Your order</h2>
+            {rows.map(({ product, qty }) => (
+              <div className="checkout-item" key={product.id}><img src={product.image} alt=""/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price * qty)}</strong></div>
+            ))}
+          </aside>
+          <OrderSummary subtotal={subtotal} delivery={delivery} />
+          <button className="place-order-button" type="submit">{method === 'mpesa' ? 'Place order with M-Pesa' : 'Place order with card'} <ChevronRight size={17}/></button>
+        </div>
+      </form>
+    </main>
+  );
+}
+
+function OrderSuccessPage() {
+  const location = useLocation();
+  const method = location.state?.method || 'payment';
+  const total = location.state?.total;
+  const orderNo = useMemo(() => `ZM-${Math.floor(100000 + Math.random() * 900000)}`, []);
+  return (
+    <main className="container page-shell success-wrap">
+      <div className="success-card">
+        <div className="success-icon"><CircleCheck size={50}/></div>
+        <span className="page-kicker">ORDER RECEIVED</span>
+        <h1>Thank you for shopping with us.</h1>
+        <p>Your demo order has been created successfully using {method === 'mpesa' ? 'M-Pesa' : 'card'} checkout.</p>
+        <div className="success-order"><span>Order number</span><strong>{orderNo}</strong>{total && <><span>Total</span><strong>{money(total)}</strong></>}</div>
+        <div className="success-actions"><Link className="primary-button" to="/shop">Continue shopping</Link><Link className="secondary-button" to="/track-order">Track order</Link></div>
       </div>
-    </div>
+    </main>
+  );
+}
+
+function TrackOrderPage() {
+  const [shown, setShown] = useState(false);
+  return (
+    <main className="container narrow-page">
+      <Breadcrumb items={[['Home','/'],['Track order']]} />
+      <div className="page-title"><span className="page-kicker">ORDER TRACKING</span><h1>Where is my order?</h1><p>Enter your order reference to see the delivery journey.</p></div>
+      <form className="track-card" onSubmit={(e) => { e.preventDefault(); setShown(true); }}>
+        <label>Order number<input placeholder="e.g. ZM-381204" /></label>
+        <label>Phone or email<input placeholder="Used at checkout" /></label>
+        <button className="primary-button" type="submit">Track order</button>
+      </form>
+      {shown && <div className="tracking-result"><h3>Order status</h3><div className="track-steps"><span className="done">Order placed</span><span className="done">Confirmed</span><span>Out for delivery</span><span>Delivered</span></div><p>This is a frontend demonstration of the tracking experience.</p></div>}
+    </main>
+  );
+}
+
+function AccountPage() {
+  return (
+    <main className="container narrow-page">
+      <Breadcrumb items={[['Home','/'],['Account']]} />
+      <div className="account-card">
+        <div className="account-icon"><CircleUserRound size={42}/></div>
+        <span className="page-kicker">MY ZAWADIMART</span>
+        <h1>Welcome back</h1>
+        <p>Sign in to manage orders, saved items and delivery information.</p>
+        <label>Email or phone<input placeholder="you@example.com" /></label>
+        <label>Password<input type="password" placeholder="••••••••" /></label>
+        <button className="primary-button">Sign in</button>
+        <div className="account-divider"><span>or</span></div>
+        <button className="secondary-button account-register">Create a new account</button>
+      </div>
+    </main>
+  );
+}
+
+function Breadcrumb({ items }) {
+  return (
+    <nav className="breadcrumb" aria-label="Breadcrumb">
+      {items.map(([label, href], index) => (
+        <span key={label}>{index > 0 && <ChevronRight size={13}/>} {href ? <Link to={href}>{label}</Link> : <b>{label}</b>}</span>
+      ))}
+    </nav>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <main className="container narrow-page">
+      <div className="empty-cart"><span className="big-404">404</span><h2>That page wandered off.</h2><p>Head back to the shop and keep browsing.</p><Link className="primary-button" to="/">Back home</Link></div>
+    </main>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="site-footer">
+      <div className="container footer-grid">
+        <div><Link className="brand footer-brand" to="/"><ShoppingCart size={25}/><span>Zawadi</span><strong>Mart</strong></Link><p>A modern Kenyan shopping experience built around clear pricing, useful products and convenient checkout.</p></div>
+        <div><h4>Shop</h4><Link to="/shop">All products</Link><Link to="/deals">Deals</Link><Link to="/category/electronics">Electronics</Link><Link to="/category/fashion">Fashion</Link></div>
+        <div><h4>Help</h4><Link to="/track-order">Track order</Link><Link to="/account">My account</Link><span>Delivery information</span><span>Returns & support</span></div>
+        <div><h4>Payments</h4><span>M-Pesa</span><span>Visa / Mastercard</span><span>Prices in KES</span><span>Secure checkout</span></div>
+      </div>
+      <div className="container footer-bottom">© 2026 ZawadiMart. Storefront UI demonstration.</div>
+    </footer>
+  );
+}
+
+function MobileBottomNav({ cartCount }) {
+  return (
+    <nav className="mobile-bottom-nav">
+      <NavLink to="/"><Home size={19}/><span>Home</span></NavLink>
+      <NavLink to="/shop"><LayoutGrid size={19}/><span>Shop</span></NavLink>
+      <NavLink to="/deals"><Tag size={19}/><span>Deals</span></NavLink>
+      <NavLink to="/cart" className="mobile-cart-link"><ShoppingCart size={19}/><span>Cart</span>{cartCount > 0 && <i>{cartCount}</i>}</NavLink>
+      <NavLink to="/account"><CircleUserRound size={19}/><span>Account</span></NavLink>
+    </nav>
   );
 }
 
