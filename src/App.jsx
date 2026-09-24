@@ -15,6 +15,25 @@ import { categories, getCategory, getProduct, money, products } from './data';
 const discount = (product) =>
   Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100);
 
+function BrandLogo({ compact = false }) {
+  return (
+    <span className={`brand-logo ${compact ? 'compact' : ''}`}>
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="4" y="7" width="40" height="36" rx="11" fill="#109b59" />
+        <path d="M15 19.2h18l-1.4 15.4H16.4L15 19.2Z" fill="#ffffff" opacity=".98" />
+        <path d="M19 19.2c0-4.2 2-6.7 5-6.7s5 2.5 5 6.7" fill="none" stroke="#ffffff" strokeWidth="2.7" strokeLinecap="round" />
+        <path d="M19.1 24.2h10.4l-7.8 7.5h8.1" fill="none" stroke="#109b59" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="38.2" cy="11.2" r="4.6" fill="#f6b73c" />
+        <path d="M38.2 8.8v4.8M35.8 11.2h4.8" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+      <span className="brand-wordmark">
+        <span>Zawadi</span><strong>Mart</strong>
+        <small>SHOP SMART · LIVE BETTER</small>
+      </span>
+    </span>
+  );
+}
+
 function App() {
   const [cart, setCart] = useState(() => {
     try { return JSON.parse(localStorage.getItem('zawadimart-cart')) || []; }
@@ -139,10 +158,7 @@ function Header({ cartCount, menuOpen, setMenuOpen }) {
             <Menu size={23} />
           </button>
 
-          <Link className="brand" to="/" aria-label="ZawadiMart home">
-            <ShoppingCart className="brand-cart" size={28} />
-            <span>Zawadi</span><strong>Mart</strong>
-          </Link>
+          <Link className="brand" to="/" aria-label="ZawadiMart home"><BrandLogo /></Link>
 
           <form className="desktop-search" onSubmit={submitSearch}>
             <Search size={18} />
@@ -190,9 +206,7 @@ function Header({ cartCount, menuOpen, setMenuOpen }) {
         <button className="drawer-overlay" onClick={() => setMenuOpen(false)} aria-label="Close navigation" />
         <aside className="drawer-panel">
           <div className="drawer-head">
-            <Link className="brand" to="/">
-              <ShoppingCart size={24} /><span>Zawadi</span><strong>Mart</strong>
-            </Link>
+            <Link className="brand" to="/"><BrandLogo compact /></Link>
             <button className="icon-button" onClick={() => setMenuOpen(false)} aria-label="Close navigation"><X /></button>
           </div>
           <Link to="/shop"><LayoutGrid size={18} />All Categories</Link>
@@ -696,7 +710,7 @@ function Footer() {
   return (
     <footer className="site-footer">
       <div className="container footer-grid">
-        <div><Link className="brand footer-brand" to="/"><ShoppingCart size={25}/><span>Zawadi</span><strong>Mart</strong></Link><p>A modern Kenyan shopping experience built around clear pricing, useful products and convenient checkout.</p></div>
+        <div><Link className="brand footer-brand" to="/"><BrandLogo compact /></Link><p>A modern Kenyan shopping experience built around clear pricing, useful products and convenient checkout.</p></div>
         <div><h4>Shop</h4><Link to="/shop">All products</Link><Link to="/deals">Deals</Link><Link to="/category/electronics">Electronics</Link><Link to="/category/fashion">Fashion</Link></div>
         <div><h4>Help</h4><Link to="/track-order">Track order</Link><Link to="/account">My account</Link><span>Delivery information</span><span>Returns & support</span></div>
         <div><h4>Payments</h4><span>M-Pesa</span><span>Visa / Mastercard</span><span>Prices in KES</span><span>Secure checkout</span></div>
