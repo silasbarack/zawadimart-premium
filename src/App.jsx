@@ -8,6 +8,9 @@ import {
   Link, NavLink, Route, Routes, useLocation, useNavigate, useParams, useSearchParams
 } from 'react-router-dom';
 import { categories, getCategory, getProduct, money, products } from './data';
+import mpesaLogo from './assets/payments/mpesa.svg';
+import visaLogo from './assets/payments/visa.svg';
+import mastercardLogo from './assets/payments/mastercard.svg';
 
 const discount = (p) => Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
 
@@ -31,22 +34,24 @@ const PAYMENT_BRANDS = {
   mpesa: {
     name: 'M-PESA',
     src: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/M-PESA_LOGO-01.svg',
+    fallback: mpesaLogo,
   },
   visa: {
     name: 'Visa',
-    src: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Visa_Inc._logo_%282021%E2%80%93present%29.svg',
+    src: visaLogo,
   },
   mastercard: {
     name: 'Mastercard',
-    src: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Mastercard_2019_logo.svg',
+    src: mastercardLogo,
   },
 };
 
 function PaymentBrand({ brand, compact=false }) {
   const item=PAYMENT_BRANDS[brand];
+  const [src,setSrc]=useState(item.src);
   return (
     <span className={`pay-logo official ${brand} ${compact ? 'compact' : ''}`} aria-label={item.name} title={item.name}>
-      <img src={item.src} alt={item.name} loading="eager" decoding="async" />
+      <img src={src} alt={item.name} loading="eager" decoding="async" onError={()=>item.fallback&&src!==item.fallback&&setSrc(item.fallback)} />
     </span>
   );
 }

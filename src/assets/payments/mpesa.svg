@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 64" width="220" height="64" role="img" aria-label="M-PESA">
+  <text x="0" y="50" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="52" font-weight="900" fill="#4CB848" letter-spacing="-1">M</text>
+  <g transform="translate(50 8)">
+    <rect x="0" y="0" width="28" height="48" rx="5" fill="#4CB848"/>
+    <rect x="4" y="6" width="20" height="30" rx="1.5" fill="#fff"/>
+    <rect x="7" y="15" width="14" height="6" rx="1" fill="#E4002B"/>
+    <circle cx="14" cy="42" r="2.6" fill="#fff"/>
+  </g>
+  <text x="84" y="50" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="52" font-weight="900" fill="#4CB848" letter-spacing="-1">PESA</text>
+</svg>
