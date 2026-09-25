@@ -329,3 +329,40 @@ footer .payment-marks{margin-top:8px}footer .pay-logo{background:#fff}
   .detail-payment-marks{align-items:flex-start;flex-direction:column}
   .summary-payments{justify-content:center!important}
 }
+
+/* Official payment marks inside checkout selectors */
+.payment-tabs button .pay-logo{
+  border:0;
+  background:transparent;
+  padding:0;
+  min-height:0;
+  flex:none;
+}
+.payment-tabs button .pay-logo img{
+  max-height:20px;
+}
+.payment-tabs button .pay-logo.mpesa img{
+  max-width:74px;
+}
+.tab-card-logos{
+  display:inline-flex!important;
+  align-items:center;
+  gap:5px;
+  flex:none;
+}
+.tab-card-logos .pay-logo.visa img{max-width:44px}
+.tab-card-logos .pay-logo.mastercard img{max-width:52px}
+
+@media(max-width:780px){
+  .payment-tabs button{
+    align-items:center;
+  }
+  .payment-tabs button .pay-logo.mpesa img{
+    max-width:62px;
+  }
+  .tab-card-logos{
+    gap:3px;
+  }
+  .tab-card-logos .pay-logo.visa img{max-width:38px}
+  .tab-card-logos .pay-logo.mastercard img{max-width:44px}
+}
