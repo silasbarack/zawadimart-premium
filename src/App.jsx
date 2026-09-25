@@ -207,8 +207,87 @@ function DealsPage(props){
 }
 
 function ProductPage({addToCart,wishlist,toggleWishlist}){
-  const {id}=useParams(); const p=getProduct(id); const [qty,setQty]=useState(1); if(!p)return <NotFound/>; const cat=getCategory(p.category);
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,'/category/'+cat.slug],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p><div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div><div className="detail-actions"><div className="qty"><button onClick={()=>setQty(Math.max(1,qty-1))}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))}><Plus/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)}><Heart fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div></div></section></main>
+  const {id}=useParams();
+  const p=getProduct(id);
+  const [qty,setQty]=useState(1);
+  const [loading,setLoading]=useState(true);
+  const [offline,setOffline]=useState(!navigator.onLine);
+
+  useEffect(()=>{
+    if(!p) return;
+    let cancelled=false;
+    let retryTimer;
+
+    const networkDelay=()=>{
+      const type=navigator.connection?.effectiveType;
+      if(type==='slow-2g') return 1400;
+      if(type==='2g') return 1000;
+      if(type==='3g') return 650;
+      return 280;
+    };
+
+    const loadProduct=()=>{
+      if(cancelled) return;
+      if(!navigator.onLine){
+        setOffline(true);
+        setLoading(true);
+        return;
+      }
+      setOffline(false);
+      setLoading(true);
+      const started=Date.now();
+      const image=new Image();
+      const finish=()=>{
+        const wait=Math.max(0,networkDelay()-(Date.now()-started));
+        retryTimer=setTimeout(()=>{ if(!cancelled) setLoading(false); },wait);
+      };
+      image.onload=finish;
+      image.onerror=finish;
+      image.src=p.image;
+      if(image.complete) finish();
+    };
+
+    const onlineHandler=()=>loadProduct();
+    const offlineHandler=()=>{setOffline(true);setLoading(true);};
+    window.addEventListener('online',onlineHandler);
+    window.addEventListener('offline',offlineHandler);
+    loadProduct();
+
+    return ()=>{
+      cancelled=true;
+      clearTimeout(retryTimer);
+      window.removeEventListener('online',onlineHandler);
+      window.removeEventListener('offline',offlineHandler);
+    };
+  },[p?.id]);
+
+  if(!p)return <NotFound/>;
+  const cat=getCategory(p.category);
+
+  if(loading){
+    return <main className="product-loading-page">
+      <div className="product-loader-card">
+        <BrandLogo/>
+        <div className="loader-ring" aria-hidden="true"><span/></div>
+        <h2>{offline?'You are offline':'Loading product'}</h2>
+        <p>{offline?'Reconnect to the internet and ZawadiMart will continue automatically.':'Fetching the latest product details and image…'}</p>
+        <div className="loader-progress"><span/></div>
+        {!offline&&<small>Loading speed depends on your internet connection.</small>}
+      </div>
+      <div className="container product-loading-skeleton" aria-hidden="true">
+        <div className="skeleton-image shimmer"/>
+        <div className="skeleton-copy">
+          <div className="skeleton-line wide shimmer"/>
+          <div className="skeleton-line mid shimmer"/>
+          <div className="skeleton-line price shimmer"/>
+          <div className="skeleton-line short shimmer"/>
+          <div className="skeleton-button shimmer"/>
+        </div>
+      </div>
+    </main>;
+  }
+
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,'/category/'+cat.slug],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p><div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div><div className="detail-actions"><div className="qty"><button onClick={()=>setQty(Math.max(1,qty-1))}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))}><Plus/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)}><Heart fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div></div></section></main>
 }
 
 function CartPage({rows,subtotal,setQty,remove}){
