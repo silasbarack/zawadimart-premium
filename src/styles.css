@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800;900&display=swap');
 
 :root{
   --green:#109b59;--green-dark:#087542;--orange:#f59a23;--orange-deep:#ea8614;--red:#c9173f;
   --ink:#242424;--muted:#727272;--line:#e7e7e7;--soft:#f4f4f4;--cream:#fff4e7;--mint:#e5f8f1;--blue:#eaf3ff;--pink:#fff0f4;
-  --max:1240px;font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);background:#f3f3f3;
+  --max:1240px;font-family:'Noto Sans',Arial,sans-serif;color:var(--ink);background:#f3f3f3;
 }
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-width:320px;background:#f3f3f3;color:var(--ink);-webkit-font-smoothing:antialiased}button,input,select{font:inherit}button,a{-webkit-tap-highlight-color:transparent}a{text-decoration:none;color:inherit}img{display:block;max-width:100%}input,select{outline:none}.container{width:min(calc(100% - 28px),var(--max));margin-inline:auto}.app-shell{min-height:100vh}
 
