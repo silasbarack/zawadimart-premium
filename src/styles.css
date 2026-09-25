@@ -386,3 +386,98 @@ footer .payment-marks{margin-top:8px}footer .pay-logo{background:#fff}
   .lifestyle-ad-copy p{font-size:7.5px}
   .lifestyle-note{text-align:center;font-size:6px}
 }
+
+
+/* Jumia-inspired marketplace polish — ZawadiMart branding preserved */
+.mobile-retail-bars{display:none}
+.deal-section.orange{background:#ff921b;color:#fff}
+.deal-section.gold{background:#fff1d8}
+.deal-section.lavender{background:#f3efff}
+.deal-section.sponsored{background:#ddf7ec}
+.deal-section.sponsored .deal-head h2{color:#079969}
+.deal-title-wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.flash-countdown{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:7px;background:#fff;color:#b91538;font-size:8px;font-weight:900;letter-spacing:.02em}
+.flash-countdown svg{width:14px;height:14px}
+.deal-section.orange .deal-head h2{color:#fff}
+.deal-section.orange .deal-head a{color:#f08a18}
+.category-bubbles{grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;padding-top:18px}
+.category-bubbles a>div{border-color:#f0c678;background:#fff}
+.category-bubbles a:nth-child(3n+2)>div{border-color:#efb7c6}
+.category-bubbles a:nth-child(4n)>div{border-color:#b9a8f0}
+.jumia-home{padding-bottom:4px}
+.jumia-home>.deal-section{box-shadow:0 1px 0 rgba(0,0,0,.025)}
+.deal-scroll{scroll-padding-inline:2px}
+.product-card{transition:transform .18s ease,box-shadow .18s ease}
+.product-card:hover{transform:translateY(-2px);box-shadow:0 9px 26px rgba(0,0,0,.10)}
+.product-img img{transition:transform .22s ease}
+.product-card:hover .product-img img{transform:scale(1.025)}
+
+@media(max-width:1080px){
+  .category-bubbles{grid-template-columns:repeat(8,120px)}
+}
+
+@media(max-width:780px){
+  .mobile-retail-bars{display:block}
+  .app-download-bar{background:#2f3034;color:#fff}
+  .app-download-inner{min-height:58px;display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px}
+  .app-icon{width:42px;height:42px;border-radius:7px;background:#ff931f;display:grid;place-items:center;overflow:hidden}
+  .app-icon .brand-logo{gap:0}
+  .app-icon .brand-logo svg{width:34px;height:34px;filter:none}
+  .app-icon .brand-wordmark{display:none}
+  .app-copy{display:grid;min-width:0;line-height:1.2}
+  .app-copy b{font-size:9px}
+  .app-copy small{font-size:7px;color:#d6d6d6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .app-download-inner>a{background:var(--orange);color:#fff;padding:9px 13px;border-radius:6px;font-size:8px;font-weight:900}
+  .cod-strip{background:linear-gradient(105deg,#ff9918 0 72%,#dff6ec 72% 100%)}
+  .cod-strip-inner{min-height:42px;display:flex;align-items:center;gap:10px}
+  .cod-strip strong{font-size:11px;color:#fff}
+  .cod-strip span{font-size:6.5px;color:#fff;opacity:.93}
+  .cod-strip a{margin-left:auto;padding:7px 10px;background:#111;color:#fff;font-size:7px;font-weight:900}
+
+  .site-header{position:sticky;top:0}
+  .header-main{min-height:66px;grid-template-columns:42px 1fr 42px 42px}
+  .brand-logo svg{width:33px;height:33px}
+  .brand-wordmark>span,.brand-wordmark>strong{font-size:19px}
+  .mobile-search{height:46px;border:0;background:#f2f2f2;border-radius:28px;padding-inline:16px}
+  .mobile-search svg{width:21px;height:21px}
+  .mobile-search input{font-size:11.5px}
+  .mobile-search-row{padding-bottom:12px}
+
+  .ad-carousel-wrap{background:#f0f0f0;padding:10px 0 10px}
+  .ad-carousel{width:calc(100% - 20px);border-radius:13px}
+  .people-ad{min-height:186px}
+  .campaign-mark{display:none}
+  .people-ad-copy{max-width:66%;padding:25px 15px 19px}
+  .people-ad-copy h2{font-size:22px}
+  .people-ad-copy p{font-size:7.8px}
+  .people-product{right:9px;bottom:19px;width:98px}
+  .people-product img{height:76px}
+  .campaign-model-note{display:none}
+
+  .category-bubbles{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 12px;padding:21px 10px 25px}
+  .category-bubbles a>div{padding:3px}
+  .category-bubbles span{font-size:9px;line-height:1.25;margin-top:6px}
+  .deal-section{width:calc(100% - 20px);padding:12px 10px 13px;margin-bottom:13px;border-radius:13px}
+  .deal-head{margin-bottom:10px}
+  .deal-head h2{font-size:20px;line-height:1.08}
+  .deal-head a{width:42px;height:32px}
+  .deal-title-wrap{gap:7px}
+  .flash-countdown{font-size:7.2px;padding:4px 7px}
+  .deal-scroll{grid-auto-columns:45.5%;gap:9px}
+  .product-card{border-radius:9px}
+  .product-img{height:176px}
+  .product-body h3{font-size:9.5px;height:32px}
+  .rating{font-size:8px}
+  .price{font-size:14px}
+  .old-row del{font-size:8px}
+  .old-row span{font-size:7px}
+  .stock-label{font-size:7px}
+  .info-block{border-radius:0;width:100%;padding:26px 20px;margin-bottom:0}
+  footer{margin-top:0}
+}
+
+@media(max-width:390px){
+  .deal-scroll{grid-auto-columns:47%}
+  .product-img{height:162px}
+  .app-copy b{font-size:8.5px}
+}
