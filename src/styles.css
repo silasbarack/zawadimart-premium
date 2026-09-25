@@ -506,3 +506,7 @@ footer .payment-marks{margin-top:8px}footer .pay-logo{background:#fff}
   .product-img{height:162px}
   .app-copy b{font-size:8.5px}
 }
+/* Official M-PESA mark includes a tall handset, so it needs more height than the flat card wordmarks */
+.payment-marks .pay-logo.official.mpesa img{max-height:28px;max-width:60px;margin:-4px 0}
+.payment-marks.compact .pay-logo.official.mpesa img{max-height:24px;max-width:48px;margin:-4px 0}
+.footer-payment-panel .payment-marks .pay-logo.official.mpesa img{max-height:32px;max-width:66px;margin:-5px 0}

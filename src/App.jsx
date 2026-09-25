@@ -33,8 +33,7 @@ function BrandLogo({ compact=false }) {
 const PAYMENT_BRANDS = {
   mpesa: {
     name: 'M-PESA',
-    src: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/M-PESA_LOGO-01.svg',
-    fallback: mpesaLogo,
+    src: mpesaLogo,
   },
   visa: {
     name: 'Visa',
@@ -48,10 +47,9 @@ const PAYMENT_BRANDS = {
 
 function PaymentBrand({ brand, compact=false }) {
   const item=PAYMENT_BRANDS[brand];
-  const [src,setSrc]=useState(item.src);
   return (
     <span className={`pay-logo official ${brand} ${compact ? 'compact' : ''}`} aria-label={item.name} title={item.name}>
-      <img src={src} alt={item.name} loading="eager" decoding="async" onError={()=>item.fallback&&src!==item.fallback&&setSrc(item.fallback)} />
+      <img src={item.src} alt={item.name} loading="eager" decoding="async" />
     </span>
   );
 }
