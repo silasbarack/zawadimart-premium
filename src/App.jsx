@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ChevronLeft, ChevronRight, CircleCheck, CircleUserRound, Heart, Home,
+  ChevronLeft, ChevronRight, CircleCheck, CircleUserRound, Clock3, Heart, Home,
   LayoutGrid, Menu, Minus, PackageCheck, Plus, Search, ShieldCheck,
   ShoppingBag, ShoppingCart, Star, Tag, Trash2, Truck, X
 } from 'lucide-react';
@@ -62,6 +62,45 @@ function PaymentMarks({ compact=false, withLabel=true }) {
   );
 }
 
+
+
+function MobileRetailBars() {
+  return (
+    <div className="mobile-retail-bars">
+      <div className="app-download-bar">
+        <div className="container app-download-inner">
+          <span className="app-icon"><BrandLogo compact /></span>
+          <span className="app-copy"><b>Shop on the ZawadiMart App</b><small>Fast browsing, easy checkout & fresh deals</small></span>
+          <Link to="/shop">Open</Link>
+        </div>
+      </div>
+      <div className="cod-strip">
+        <div className="container cod-strip-inner">
+          <strong>Cash on Delivery</strong>
+          <span>M-PESA · Visa · Mastercard</span>
+          <Link to="/shop">SHOP NOW</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FlashCountdown() {
+  const [seconds, setSeconds] = useState(4 * 3600 + 13 * 60 + 7);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setSeconds((current) => current > 0 ? current - 1 : 4 * 3600 + 13 * 60 + 7);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const hh = String(Math.floor(seconds / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+  const ss = String(seconds % 60).padStart(2, '0');
+
+  return <span className="flash-countdown"><Clock3 size={16}/>{hh}h : {mm}m : {ss}s</span>;
+}
 
 function App() {
   const [cart,setCart] = useState(() => {
@@ -190,7 +229,8 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
   const submit=(e)=>{e.preventDefault();navigate(q.trim()?'/shop?q='+encodeURIComponent(q.trim()):'/shop');};
   return (
     <>
-      <div className="top-strip"><div className="container">Free delivery on selected Nairobi orders · Secure checkout · Prices in KES</div></div>
+      <div className="top-strip"><div className="container">Sell on ZawadiMart · Track your order · Help Centre · Prices in KES</div></div>
+      <MobileRetailBars/>
       <header className="site-header">
         <div className="container header-main">
           <button className="menu-btn" onClick={()=>setMenuOpen(true)}><Menu/></button>
@@ -397,40 +437,49 @@ function LifestyleAds(){
 }
 
 const CategoryBubbles=()=>(
-  <section className="container category-bubbles">
-    {categories.slice(0,8).map(c=><Link key={c.slug} to={'/category/'+c.slug}><div><img src={c.image} alt={c.name}/></div><span>{c.short}</span></Link>)}
+  <section className="container category-bubbles" aria-label="Shop by category">
+    {categories.slice(0,12).map(c=><Link key={c.slug} to={'/category/'+c.slug}><div><img src={c.image} alt={c.name}/></div><span>{c.short}</span></Link>)}
   </section>
 );
 
 function HomePage(props){
-  const flash=products.slice(0,10), phones=products.filter(p=>p.category==='phones-tablets').slice(0,6);
-  const appliances=products.filter(p=>p.category==='home-appliances').slice(0,6);
-  const computing=products.filter(p=>p.category==='computing').slice(0,6);
-  const beauty=products.filter(p=>p.category==='beauty').slice(0,6);
-  const sponsored=products.filter(p=>['accessories','audio','home-kitchen'].includes(p.category)).slice(0,6);
+  const topSelling=[...products].sort((a,b)=>b.reviews-a.reviews).slice(0,10);
+  const flash=[...products].sort((a,b)=>discount(b)-discount(a)).slice(0,10);
+  const phones=products.filter(p=>p.category==='phones-tablets').slice(0,8);
+  const tv=products.filter(p=>p.category==='electronics' && /TV|Soundbar|Projector|Streaming/i.test(p.name)).slice(0,8);
+  const homeKitchen=products.filter(p=>p.category==='home-kitchen').slice(0,8);
+  const appliances=products.filter(p=>p.category==='home-appliances').slice(0,8);
+  const computing=products.filter(p=>p.category==='computing').slice(0,8);
+  const fashion=products.filter(p=>p.category==='fashion').slice(0,8);
+  const beauty=products.filter(p=>p.category==='beauty').slice(0,8);
+  const kids=products.filter(p=>p.category==='kids-baby').slice(0,8);
+  const groceries=products.filter(p=>p.category==='groceries').slice(0,8);
+  const sponsored=products.filter(p=>['accessories','audio','gaming'].includes(p.category)).slice(0,8);
+
   return <main className="jumia-home">
-    <section className="hero-zone">
-      <div className="container hero-card">
-        <div className="hero-copy"><span>MEGA SHOPPING DAYS</span><h1>Big deals.<br/>Better shopping.</h1><p>Discover phones, appliances, fashion, beauty and more — all priced in Kenyan shillings.</p><Link to="/deals">Shop Deals <ChevronRight/></Link></div>
-        <div className="hero-collage">
-          <div><img src={products[1].image}/></div><div><img src={products[18].image}/></div><div><img src={products[32].image}/></div>
-        </div>
-      </div>
-    </section>
     <CategoryBubbles/>
-    <DealSection title="Flash Sales | Live Now" tone="red" items={flash} {...props}/>
-    <DealSection title="Phone Deals" tone="cream" items={phones} {...props}/>
-    <DealSection title="Large Appliances Deals" tone="cream" items={appliances} {...props}/>
-    <DealSection title="Laptop & Computing Deals" tone="blue" items={computing} {...props}/>
-    <DealSection title="Beauty Essentials" tone="pink" items={beauty} {...props}/>
-    <DealSection title="Sponsored Products" tone="mint" items={sponsored} {...props}/>
+    <DealSection title="Top selling items" tone="orange" items={topSelling} to="/shop" {...props}/>
+    <DealSection title="Flash Sales | Live Now" tone="red" items={flash} flash to="/deals" {...props}/>
+    <DealSection title="Phone Deals" tone="cream" items={phones} to="/category/phones-tablets" {...props}/>
+    <DealSection title="TV Deals" tone="cream" items={tv} to="/category/electronics" {...props}/>
+    <DealSection title="Home & Kitchen Deals" tone="gold" items={homeKitchen} to="/category/home-kitchen" {...props}/>
+    <DealSection title="Large Appliances Deals" tone="cream" items={appliances} to="/category/home-appliances" {...props}/>
+    <DealSection title="Laptop & Computing Deals" tone="blue" items={computing} to="/category/computing" {...props}/>
+    <DealSection title="Fashion Deals" tone="lavender" items={fashion} to="/category/fashion" {...props}/>
+    <DealSection title="Beauty Essentials" tone="pink" items={beauty} to="/category/beauty" {...props}/>
+    <DealSection title="Kids & Baby" tone="gold" items={kids} to="/category/kids-baby" {...props}/>
+    <DealSection title="Supermarket Deals" tone="cream" items={groceries} to="/category/groceries" {...props}/>
+    <DealSection title="Sponsored Products" tone="mint" items={sponsored} to="/shop" sponsored {...props}/>
     <InfoBlock/>
   </main>
 }
 
-function DealSection({title,tone,items,addToCart,wishlist,toggleWishlist,openProduct}){
-  return <section className={`container deal-section ${tone}`}>
-    <div className="deal-head"><h2>{title}</h2><Link to="/shop"><ChevronRight/></Link></div>
+function DealSection({title,tone,items,addToCart,wishlist,toggleWishlist,openProduct,to='/shop',flash=false,sponsored=false}){
+  return <section className={`container deal-section ${tone} ${sponsored?'sponsored':''}`}>
+    <div className="deal-head">
+      <div className="deal-title-wrap"><h2>{title}</h2>{flash&&<FlashCountdown/>}</div>
+      <Link to={to} aria-label={'View '+title}><ChevronRight/></Link>
+    </div>
     <div className="deal-scroll">{items.map(p=><ProductCard key={p.id} product={p} addToCart={addToCart} wishlist={wishlist} toggleWishlist={toggleWishlist} openProduct={openProduct}/>)}</div>
   </section>
 }
