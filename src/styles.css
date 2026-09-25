@@ -285,8 +285,6 @@ footer{margin-top:4px;background:#303030;color:#eee}.back-top{height:58px;backgr
 }
 
 /* Payment marks */
-.payment-support-bar{background:#fff;border-bottom:1px solid #ececec}
-.payment-support-bar>.container{min-height:44px;display:flex;align-items:center;justify-content:flex-end}
 .payment-marks{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .payment-label{font-size:8px;color:#777;font-weight:700}
 .pay-logo{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:4px 8px;border-radius:7px;background:#fff;border:1px solid #e1e1e1;white-space:nowrap}
