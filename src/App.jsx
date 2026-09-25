@@ -46,7 +46,7 @@ function PaymentBrand({ brand, compact=false }) {
   const item=PAYMENT_BRANDS[brand];
   return (
     <span className={`pay-logo official ${brand} ${compact ? 'compact' : ''}`} aria-label={item.name} title={item.name}>
-      <img src={item.src} alt={item.name} loading="eager" />
+      <img src={item.src} alt={item.name} loading="eager" decoding="async" />
     </span>
   );
 }
@@ -508,7 +508,7 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
     </main>;
   }
 
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,'/category/'+cat.slug],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p><div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div><div className="detail-actions"><div className="qty"><button onClick={()=>setQty(Math.max(1,qty-1))}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))}><Plus/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)}><Heart fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div></div></section></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,'/category/'+cat.slug],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p><div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div><div className="detail-actions"><div className="qty"><button onClick={()=>setQty(Math.max(1,qty-1))}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))}><Plus/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)}><Heart fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
 }
 
 function CartPage({rows,subtotal,setQty,remove}){
@@ -518,7 +518,7 @@ function CartPage({rows,subtotal,setQty,remove}){
 
 function OrderSummary({subtotal,delivery,checkout=false}){
   const total=subtotal+delivery;
-  return <aside className="summary"><h2>Order Summary</h2><div><span>Subtotal</span><b>{money(subtotal)}</b></div><div><span>Delivery</span><b>{delivery?money(delivery):'FREE'}</b></div><div className="summary-total"><span>Total</span><b>{money(total)}</b></div>{checkout&&<Link to="/checkout">Proceed to Checkout <ChevronRight/></Link>}<p><ShieldCheck/>Secure checkout</p></aside>
+  return <aside className="summary"><h2>Order Summary</h2><div><span>Subtotal</span><b>{money(subtotal)}</b></div><div><span>Delivery</span><b>{delivery?money(delivery):'FREE'}</b></div><div className="summary-total"><span>Total</span><b>{money(total)}</b></div>{checkout&&<Link to="/checkout">Proceed to Checkout <ChevronRight/></Link>}<div className="summary-payments"><PaymentMarks compact withLabel={false}/></div><p><ShieldCheck/>Secure checkout</p></aside>
 }
 
 function CheckoutPage({rows,subtotal,clearCart}){
