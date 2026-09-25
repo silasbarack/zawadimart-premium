@@ -27,6 +27,22 @@ function BrandLogo({ compact=false }) {
   );
 }
 
+function PaymentMarks({ compact=false, withLabel=true }) {
+  return (
+    <div className={`payment-marks ${compact ? 'compact' : ''}`} aria-label="Supported payments">
+      {withLabel && <span className="payment-label">Pay securely with</span>}
+      <span className="pay-logo mpesa-logo" aria-label="M-Pesa">
+        <span className="mpesa-leaf">↗</span><b>M-PESA</b>
+      </span>
+      <span className="pay-logo visa-logo" aria-label="Visa">VISA</span>
+      <span className="pay-logo mastercard-logo" aria-label="Mastercard">
+        <i></i><i></i><b>mastercard</b>
+      </span>
+    </div>
+  );
+}
+
+
 function App() {
   const [cart,setCart] = useState(() => {
     try { return JSON.parse(localStorage.getItem('zawadimart-cart')) || []; } catch { return []; }
@@ -167,7 +183,10 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
           <form className="search-box mobile-search" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/></form>
         </div>
       </header>
-      {location.pathname === '/' && <PromoCarousel/>}
+      {location.pathname === '/' && <>
+        <PromoCarousel/>
+        <div className="payment-support-bar"><div className="container"><PaymentMarks/></div></div>
+      </>}
       <nav className="desktop-cat-nav">
         <div className="container cat-nav-inner">
           <Link to="/shop"><LayoutGrid size={17}/>All Categories</Link>
@@ -269,6 +288,7 @@ function PromoCarousel(){
                 <img src={slide.person} alt="" />
                 <div className="people-photo-shade"/>
                 <div className="campaign-mark"><BrandLogo compact/></div>
+                <span className="campaign-model-note">ZawadiMart lifestyle campaign</span>
               </div>
               <div className="people-ad-copy">
                 <span className="ad-kicker">{slide.kicker}</span>
@@ -485,7 +505,7 @@ function CheckoutPage({rows,subtotal,clearCart}){
   const nav=useNavigate(); const [method,setMethod]=useState('mpesa'); const [error,setError]=useState(''); const delivery=subtotal>=10000?0:(subtotal?350:0);
   const submit=(e)=>{e.preventDefault();if(!rows.length)return nav('/cart');const f=new FormData(e.currentTarget);if(!f.get('fullName')||!f.get('phone')||!f.get('address'))return setError('Please complete contact and delivery details.');if(method==='mpesa'&&!/^((\+?254)|0)?7\d{8}$/.test(String(f.get('mpesa')).replace(/\s/g,'')))return setError('Enter a valid Kenyan M-Pesa number.');if(method==='card'&&(!f.get('cardName')||String(f.get('cardNumber')).replace(/\s/g,'').length<13||String(f.get('cvc')).length<3))return setError('Complete the card details correctly.');clearCart();nav('/order-success',{state:{method,total:subtotal+delivery}})};
   if(!rows.length)return <main className="container page-shell"><Empty icon={<ShoppingBag/>} title="No items to checkout"/></main>;
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]}/><div className="checkout-title"><h1>Checkout</h1><ShieldCheck/></div><form className="checkout-layout" onSubmit={submit}><div className="checkout-forms"><section className="form-card"><h2>Delivery Details</h2><div className="form-grid"><label>Full name<input name="fullName" placeholder="e.g. Amina Wanjiku"/></label><label>Phone number<input name="phone" placeholder="0712 345 678"/></label><label className="wide">Email<input name="email" type="email" placeholder="you@example.com"/></label><label className="wide">Delivery address<input name="address" placeholder="Estate, street, building and house number"/></label><label>County<select name="county"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label><label>Town / area<input name="town" placeholder="e.g. Kilimani"/></label></div></section><section className="form-card"><h2>Payment Method</h2><div className="payment-tabs"><button type="button" className={method==='mpesa'?'active':''} onClick={()=>setMethod('mpesa')}><Smartphone/><span><b>M-Pesa</b><small>Pay from phone</small></span></button><button type="button" className={method==='card'?'active':''} onClick={()=>setMethod('card')}><CreditCard/><span><b>Card</b><small>Visa / Mastercard</small></span></button></div>{method==='mpesa'?<div className="payment-panel"><div className="mpesa">M-PESA</div><label>M-Pesa phone number<input name="mpesa" placeholder="0712 345 678"/></label><p>STK Push would be sent after a live payment gateway is connected.</p></div>:<div className="payment-panel"><div className="form-grid"><label className="wide">Name as it appears on card<input name="cardName" placeholder="CARDHOLDER NAME"/></label><label className="wide">Card number<input name="cardNumber" placeholder="1234 5678 9012 3456"/></label><label>Expiry<input name="expiry" placeholder="MM / YY"/></label><label>CVC<input name="cvc" placeholder="123"/></label></div><p>Card data is not stored by this frontend.</p></div>}</section>{error&&<div className="error">{error}</div>}</div><div><aside className="checkout-items"><h2>Your Order</h2>{rows.map(({product,qty})=><div key={product.id}><img src={product.image}/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price*qty)}</strong></div>)}</aside><OrderSummary subtotal={subtotal} delivery={delivery}/><button className="place-order">Place Order <ChevronRight/></button></div></form></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]}/><div className="checkout-title"><h1>Checkout</h1><ShieldCheck/></div><form className="checkout-layout" onSubmit={submit}><div className="checkout-forms"><section className="form-card"><h2>Delivery Details</h2><div className="form-grid"><label>Full name<input name="fullName" placeholder="e.g. Amina Wanjiku"/></label><label>Phone number<input name="phone" placeholder="0712 345 678"/></label><label className="wide">Email<input name="email" type="email" placeholder="you@example.com"/></label><label className="wide">Delivery address<input name="address" placeholder="Estate, street, building and house number"/></label><label>County<select name="county"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label><label>Town / area<input name="town" placeholder="e.g. Kilimani"/></label></div></section><section className="form-card"><div className="payment-heading-row"><h2>Payment Method</h2><PaymentMarks compact withLabel={false}/></div><div className="payment-tabs"><button type="button" className={method==='mpesa'?'active':''} onClick={()=>setMethod('mpesa')}><Smartphone/><span><b>M-Pesa</b><small>Pay from phone</small></span></button><button type="button" className={method==='card'?'active':''} onClick={()=>setMethod('card')}><CreditCard/><span><b>Card</b><small>Visa / Mastercard</small></span></button></div>{method==='mpesa'?<div className="payment-panel"><div className="checkout-brand-row"><span className="pay-logo mpesa-logo"><span className="mpesa-leaf">↗</span><b>M-PESA</b></span><span>Supported</span></div><label>M-Pesa phone number<input name="mpesa" placeholder="0712 345 678"/></label><p>STK Push would be sent after a live payment gateway is connected.</p></div>:<div className="payment-panel"><div className="checkout-brand-row"><span className="pay-logo visa-logo">VISA</span><span className="pay-logo mastercard-logo"><i></i><i></i><b>mastercard</b></span><span>Supported</span></div><div className="form-grid"><label className="wide">Name as it appears on card<input name="cardName" placeholder="CARDHOLDER NAME"/></label><label className="wide">Card number<input name="cardNumber" placeholder="1234 5678 9012 3456"/></label><label>Expiry<input name="expiry" placeholder="MM / YY"/></label><label>CVC<input name="cvc" placeholder="123"/></label></div><p>Card data is not stored by this frontend.</p></div>}</section>{error&&<div className="error">{error}</div>}</div><div><aside className="checkout-items"><h2>Your Order</h2>{rows.map(({product,qty})=><div key={product.id}><img src={product.image}/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price*qty)}</strong></div>)}</aside><OrderSummary subtotal={subtotal} delivery={delivery}/><button className="place-order">Place Order <ChevronRight/></button></div></form></main>
 }
 
 function OrderSuccess(){const l=useLocation();return <main className="container success"><CircleCheck/><h1>Order received</h1><p>Your demo order was created using {l.state?.method==='mpesa'?'M-Pesa':'card'} checkout.</p><Link to="/shop">Continue Shopping</Link></main>}
@@ -497,7 +517,7 @@ function NotFound(){return <main className="container narrow"><Empty icon={<span
 
 function InfoBlock(){return <section className="container info-block"><h2>ZawadiMart Kenya — Shopping Made Easier</h2><p>Explore a broad catalogue of products for everyday Kenyan life, including phones, electronics, appliances, computing, fashion, beauty, home essentials and more. ZawadiMart is designed as a realistic e-commerce shopping experience with transparent KES pricing, product categories, cart functionality and convenient checkout flows.</p></section>}
 
-function Footer(){return <footer><div className="back-top" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>⌃<span>BACK TO TOP</span></div><div className="container footer-grid"><div><BrandLogo compact/><p>Modern online shopping for Kenya.</p></div><div><h4>HELP</h4><Link to="/track-order">Track Order</Link><Link to="/account">My Account</Link><span>Shipping & Delivery</span><span>Returns</span></div><div><h4>ABOUT</h4><Link to="/shop">Shop</Link><Link to="/deals">Deals</Link><span>Terms & Conditions</span><span>Privacy Notice</span></div><div><h4>PAYMENTS</h4><span>M-Pesa</span><span>Visa / Mastercard</span><span>Prices in KES</span></div></div><div className="footer-bottom">© 2026 ZawadiMart. Frontend demonstration.</div></footer>}
+function Footer(){return <footer><div className="back-top" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>⌃<span>BACK TO TOP</span></div><div className="container footer-grid"><div><BrandLogo compact/><p>Modern online shopping for Kenya.</p><PaymentMarks compact withLabel={false}/></div><div><h4>HELP</h4><Link to="/track-order">Track Order</Link><Link to="/account">My Account</Link><span>Shipping & Delivery</span><span>Returns</span></div><div><h4>ABOUT</h4><Link to="/shop">Shop</Link><Link to="/deals">Deals</Link><span>Terms & Conditions</span><span>Privacy Notice</span></div><div><h4>PAYMENTS</h4><span>M-Pesa supported</span><span>Visa supported</span><span>Mastercard supported</span><span>Prices in KES</span></div></div><div className="footer-bottom">© 2026 ZawadiMart. Frontend demonstration.</div></footer>}
 
 function MobileNav({cartCount}){return <nav className="mobile-nav"><NavLink to="/"><Home/><span>Home</span></NavLink><NavLink to="/shop"><LayoutGrid/><span>Shop</span></NavLink><NavLink to="/deals"><Tag/><span>Deals</span></NavLink><NavLink to="/cart" className="mobile-cart"><ShoppingCart/><span>Cart</span>{cartCount>0&&<i>{cartCount}</i>}</NavLink><NavLink to="/account"><CircleUserRound/><span>Account</span></NavLink></nav>}
 
