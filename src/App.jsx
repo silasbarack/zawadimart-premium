@@ -195,49 +195,53 @@ function PromoCarousel(){
   const [touchStart,setTouchStart]=useState(null);
   const slides=[
     {
-      kicker:'TECH WEEK',
-      title:'Upgrade your phone',
-      text:'Smartphones, tablets and accessories with competitive Kenyan prices.',
-      cta:'Shop phones',
-      to:'/category/phones-tablets',
-      image:products[1].image,
-      image2:products[56].image,
-      tone:'tech'
-    },
-    {
-      kicker:'HOME UPGRADE',
-      title:'Make home easier',
-      text:'Appliances and kitchen essentials for everyday Kenyan homes.',
-      cta:'Shop appliances',
-      to:'/category/home-appliances',
-      image:products[18].image,
-      image2:products[24].image,
-      tone:'home'
-    },
-    {
-      kicker:'STYLE DROP',
-      title:'Fresh looks, better prices',
-      text:'Fashion, shoes and accessories for work, weekends and everything between.',
-      cta:'Shop fashion',
+      kicker:'ZAWADIMART STYLE',
+      title:'Shopping feels better',
+      text:'Discover fashion, accessories and everyday favourites in one place.',
+      cta:'Explore fashion',
       to:'/category/fashion',
-      image:products[31].image,
-      image2:products[34].image,
-      tone:'fashion'
+      person:'https://images.unsplash.com/photo-1758520387469-30e8ed486f92?auto=format&fit=crop&w=1600&q=88',
+      product:products[34].image,
+      tone:'lifestyle',
+      accent:'Fresh picks'
     },
     {
-      kicker:'COMPUTING DEALS',
-      title:'Ready for work & study',
+      kicker:'SHOP TOGETHER',
+      title:'Find something worth smiling about',
+      text:'Browse deals across phones, fashion, beauty and accessories.',
+      cta:'See today’s deals',
+      to:'/deals',
+      person:'https://images.unsplash.com/photo-1758525223435-b097e298fadf?auto=format&fit=crop&w=1600&q=88',
+      product:products[1].image,
+      tone:'friends',
+      accent:'Better together'
+    },
+    {
+      kicker:'SOUND & AUDIO',
+      title:'Turn up your day',
+      text:'Wireless headphones, earbuds and speakers for work, travel and downtime.',
+      cta:'Shop audio',
+      to:'/category/audio',
+      person:'https://images.unsplash.com/photo-1528575684628-87f3e91df91f?auto=format&fit=crop&w=1600&q=88',
+      product:products[41].image,
+      tone:'audio',
+      accent:'Feel the sound'
+    },
+    {
+      kicker:'WORK & STUDY',
+      title:'Tech that keeps up with you',
       text:'Laptops, monitors and accessories for school, business and creators.',
       cta:'Shop computing',
       to:'/category/computing',
-      image:products[12].image,
-      image2:products[15].image,
-      tone:'computing'
+      person:'https://images.unsplash.com/photo-1635766854982-fc151c6e9278?auto=format&fit=crop&w=1600&q=88',
+      product:products[12].image,
+      tone:'computing',
+      accent:'Ready for more'
     }
   ];
 
   useEffect(()=>{
-    const timer=window.setInterval(()=>setActive(i=>(i+1)%slides.length),4600);
+    const timer=window.setInterval(()=>setActive(i=>(i+1)%slides.length),4800);
     return ()=>window.clearInterval(timer);
   },[]);
 
@@ -251,7 +255,7 @@ function PromoCarousel(){
   };
 
   return (
-    <section className="ad-carousel-wrap" aria-label="Featured promotions">
+    <section className="ad-carousel-wrap" aria-label="ZawadiMart promotional campaigns">
       <div className="container ad-carousel">
         <div
           className="ad-track"
@@ -260,17 +264,24 @@ function PromoCarousel(){
           onTouchEnd={onTouchEnd}
         >
           {slides.map((slide,index)=>(
-            <article className={`ad-slide ${slide.tone}`} key={slide.title} aria-hidden={active!==index}>
-              <div className="ad-copy">
-                <span>{slide.kicker}</span>
+            <article className={`ad-slide people-ad ${slide.tone}`} key={slide.title} aria-hidden={active!==index}>
+              <div className="people-photo">
+                <img src={slide.person} alt="" />
+                <div className="people-photo-shade"/>
+                <div className="campaign-mark"><BrandLogo compact/></div>
+              </div>
+              <div className="people-ad-copy">
+                <span className="ad-kicker">{slide.kicker}</span>
                 <h2>{slide.title}</h2>
                 <p>{slide.text}</p>
-                <Link to={slide.to}>{slide.cta}<ChevronRight size={17}/></Link>
+                <div className="ad-cta-row">
+                  <Link to={slide.to}>{slide.cta}<ChevronRight size={17}/></Link>
+                  <span className="campaign-note">{slide.accent}</span>
+                </div>
               </div>
-              <div className="ad-visual">
-                <div className="ad-image primary"><img src={slide.image} alt=""/></div>
-                <div className="ad-image secondary"><img src={slide.image2} alt=""/></div>
-                <span className="ad-badge">ZawadiMart Deals</span>
+              <div className="people-product">
+                <span>Featured pick</span>
+                <img src={slide.product} alt="" />
               </div>
             </article>
           ))}
