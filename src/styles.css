@@ -289,14 +289,16 @@ footer{margin-top:4px;background:#303030;color:#eee}.back-top{height:58px;backgr
 .payment-support-bar>.container{min-height:44px;display:flex;align-items:center;justify-content:flex-end}
 .payment-marks{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .payment-label{font-size:8px;color:#777;font-weight:700}
-.pay-logo{display:inline-flex;align-items:center;justify-content:center;min-height:25px;padding:4px 8px;border-radius:6px;background:#fff;border:1px solid #e1e1e1;font-size:8px;font-weight:900;line-height:1;white-space:nowrap}
-.mpesa-logo{color:#0c8f4e;border-color:#b8e3cd}.mpesa-leaf{margin-right:3px;font-size:10px}
-.visa-logo{color:#1434cb;font-style:italic;font-size:11px;letter-spacing:-.4px}
-.mastercard-logo{gap:0;position:relative;padding-left:26px;color:#444}
-.mastercard-logo i{position:absolute;width:14px;height:14px;border-radius:50%;top:5px}
-.mastercard-logo i:first-child{left:7px;background:#eb001b}.mastercard-logo i:nth-child(2){left:14px;background:#f79e1b;opacity:.92}
-.mastercard-logo b{font-size:7px;font-weight:800}
-.payment-marks.compact{gap:6px}.payment-marks.compact .pay-logo{min-height:22px;padding:3px 6px}
+.pay-logo{display:inline-flex;align-items:center;justify-content:center;min-height:30px;padding:4px 8px;border-radius:7px;background:#fff;border:1px solid #e1e1e1;white-space:nowrap}
+.pay-logo.official img{display:block;max-width:72px;max-height:20px;width:auto;height:auto;object-fit:contain}
+.pay-logo.official.mpesa img{max-width:82px;max-height:21px}
+.pay-logo.official.visa img{max-width:58px;max-height:18px}
+.pay-logo.official.mastercard img{max-width:70px;max-height:22px}
+.payment-marks.compact{gap:6px}.payment-marks.compact .pay-logo{min-height:24px;padding:3px 6px}
+.payment-marks.compact .pay-logo.official img{max-height:16px}
+.payment-marks.compact .pay-logo.official.mpesa img{max-width:66px}
+.payment-marks.compact .pay-logo.official.visa img{max-width:48px}
+.payment-marks.compact .pay-logo.official.mastercard img{max-width:57px}
 .checkout-brand-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}
 .checkout-brand-row>span:last-child{font-size:7px;color:#278156;font-weight:800}
 .payment-heading-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}.payment-heading-row h2{margin:0}
@@ -304,13 +306,17 @@ footer{margin-top:4px;background:#303030;color:#eee}.back-top{height:58px;backgr
 /* Lifestyle campaign disclosure */
 .campaign-model-note{position:absolute;left:10px;bottom:8px;z-index:2;padding:4px 7px;border-radius:999px;background:rgba(0,0,0,.5);color:#fff;font-size:6px;font-weight:700;backdrop-filter:blur(3px)}
 
-footer .payment-marks{margin-top:8px}footer .pay-logo{background:#fff;color:#222}footer .mpesa-logo{color:#0c8f4e}footer .visa-logo{color:#1434cb}
+footer .payment-marks{margin-top:8px}footer .pay-logo{background:#fff}
 
 @media(max-width:780px){
   .payment-support-bar>.container{min-height:38px;justify-content:center}
   .payment-label{display:none}
   .payment-marks{gap:6px}
-  .pay-logo{min-height:22px;padding:3px 6px}
+  .pay-logo{min-height:24px;padding:3px 6px}
+  .pay-logo.official img{max-height:15px}
+  .pay-logo.official.mpesa img{max-width:64px}
+  .pay-logo.official.visa img{max-width:46px}
+  .pay-logo.official.mastercard img{max-width:54px}
   .campaign-model-note{font-size:5.5px;left:7px;bottom:6px}
   .payment-heading-row{align-items:flex-start;flex-direction:column}
 }
