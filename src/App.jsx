@@ -34,10 +34,18 @@ function App() {
   const [wishlist,setWishlist] = useState([]);
   const [menuOpen,setMenuOpen] = useState(false);
   const [toast,setToast] = useState('');
+  const [productLoading,setProductLoading] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(()=>localStorage.setItem('zawadimart-cart',JSON.stringify(cart)),[cart]);
   useEffect(()=>{ setMenuOpen(false); window.scrollTo({top:0,behavior:'smooth'}); },[location.pathname]);
+  useEffect(()=>{
+    if (!productLoading) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previousOverflow; };
+  },[productLoading]);
 
   const cartCount = cart.reduce((s,i)=>s+i.qty,0);
   const rows = cart.map(i=>({...i,product:getProduct(i.id)})).filter(i=>i.product);
@@ -57,11 +65,54 @@ function App() {
   };
   const setQty=(id,qty)=>setCart(c=>qty<=0?c.filter(i=>i.id!==id):c.map(i=>i.id===id?{...i,qty:Math.min(qty,getProduct(id).stock)}:i));
   const toggleWishlist=(id)=>setWishlist(w=>w.includes(id)?w.filter(x=>x!==id):[...w,id]);
-  const shared={addToCart,wishlist,toggleWishlist};
+
+  const openProduct = (product) => {
+    if (!product || productLoading) return;
+
+    setProductLoading(product);
+
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const effectiveType = connection?.effectiveType || '4g';
+    const minDelay = connection?.saveData
+      ? 1400
+      : effectiveType === 'slow-2g'
+        ? 1900
+        : effectiveType === '2g'
+          ? 1600
+          : effectiveType === '3g'
+            ? 1000
+            : 520;
+
+    const startedAt = performance.now();
+    let completed = false;
+
+    const finish = () => {
+      if (completed) return;
+      completed = true;
+
+      const elapsed = performance.now() - startedAt;
+      const wait = Math.max(0, minDelay - elapsed);
+
+      window.setTimeout(() => {
+        navigate('/product/' + product.id);
+        window.setTimeout(() => setProductLoading(null), 180);
+      }, wait);
+    };
+
+    const image = new Image();
+    image.onload = finish;
+    image.onerror = finish;
+    image.src = product.image;
+
+    window.setTimeout(finish, Math.max(minDelay + 1400, 2800));
+  };
+
+  const shared={addToCart,wishlist,toggleWishlist,openProduct};
 
   return (
     <div className="app-shell">
       {toast && <div className="toast"><CircleCheck size={16}/>{toast}</div>}
+      {productLoading && <ProductLoadingOverlay product={productLoading}/>}
       <Header cartCount={cartCount} menuOpen={menuOpen} setMenuOpen={setMenuOpen}/>
       <Routes>
         <Route path="/" element={<HomePage {...shared}/>}/>
@@ -78,6 +129,20 @@ function App() {
       </Routes>
       <Footer/>
       <MobileNav cartCount={cartCount}/>
+    </div>
+  );
+}
+
+function ProductLoadingOverlay({ product }) {
+  return (
+    <div className="product-loading-overlay" role="status" aria-live="polite" aria-label={'Loading ' + product.name}>
+      <div className="product-loader-card">
+        <div className="product-loader-logo"><BrandLogo /></div>
+        <div className="product-loader-spinner" aria-hidden="true" />
+        <strong>Loading product</strong>
+        <span>{product.name}</span>
+        <small>Preparing product details…</small>
+      </div>
     </div>
   );
 }
@@ -155,18 +220,24 @@ function HomePage(props){
   </main>
 }
 
-function DealSection({title,tone,items,addToCart,wishlist,toggleWishlist}){
+function DealSection({title,tone,items,addToCart,wishlist,toggleWishlist,openProduct}){
   return <section className={`container deal-section ${tone}`}>
     <div className="deal-head"><h2>{title}</h2><Link to="/shop"><ChevronRight/></Link></div>
-    <div className="deal-scroll">{items.map(p=><ProductCard key={p.id} product={p} addToCart={addToCart} wishlist={wishlist} toggleWishlist={toggleWishlist}/>)}</div>
+    <div className="deal-scroll">{items.map(p=><ProductCard key={p.id} product={p} addToCart={addToCart} wishlist={wishlist} toggleWishlist={toggleWishlist} openProduct={openProduct}/>)}</div>
   </section>
 }
 
-function ProductCard({product,addToCart,wishlist,toggleWishlist}){
+function ProductCard({product,addToCart,wishlist,toggleWishlist,openProduct}){
+  const open = (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    openProduct(product);
+  };
+
   return <article className="product-card">
-    <Link className="product-img" to={'/product/'+product.id}><img src={product.image} alt={product.name}/><span className="stock-label">{product.stock} items in stock</span></Link>
+    <Link className="product-img" to={'/product/'+product.id} onClick={open}><img src={product.image} alt={product.name}/><span className="stock-label">{product.stock} items in stock</span></Link>
     <div className="product-body">
-      <Link to={'/product/'+product.id}><h3>{product.name}</h3></Link>
+      <Link to={'/product/'+product.id} onClick={open}><h3>{product.name}</h3></Link>
       <div className="rating"><Star size={14} fill="currentColor"/>{product.rating} <span>({product.reviews})</span></div>
       <strong className="price">{money(product.price)}</strong>
       <div className="old-row"><del>{money(product.oldPrice)}</del><span>-{discount(product)}%</span></div>
