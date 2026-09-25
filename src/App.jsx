@@ -342,6 +342,63 @@ function PromoCarousel(){
   );
 }
 
+function LifestyleAds(){
+  const ads=[
+    {
+      title:'Bring home the good feeling',
+      text:'Discover fashion, accessories and everyday finds made for moments that feel good.',
+      cta:'Shop fashion',
+      to:'/category/fashion',
+      image:'https://images.unsplash.com/photo-1758520387687-38a92a7ee42f?auto=format&fit=crop&w=1800&q=82',
+      className:'shopping'
+    },
+    {
+      title:'A better phone day',
+      text:'Stay connected, capture the moment and enjoy more with phones and accessories from ZawadiMart.',
+      cta:'Shop phones',
+      to:'/category/phones-tablets',
+      image:'https://images.unsplash.com/photo-1758874384969-30bc74c7661d?auto=format&fit=crop&w=1800&q=82',
+      className:'phone'
+    },
+    {
+      title:'Work, study, create',
+      text:'Find laptops and tech that fit the way you work from home, campus or anywhere in between.',
+      cta:'Shop computing',
+      to:'/category/computing',
+      image:'https://images.unsplash.com/photo-1758598306251-f68bda7168a2?auto=format&fit=crop&w=1800&q=82',
+      className:'computing'
+    },
+    {
+      title:'Good food, happy home',
+      text:'Make everyday cooking easier with practical kitchen appliances and home essentials.',
+      cta:'Shop home & kitchen',
+      to:'/category/home-kitchen',
+      image:'https://images.unsplash.com/photo-1758523420914-34c82b27a023?auto=format&fit=crop&w=1800&q=82',
+      className:'kitchen'
+    }
+  ];
+
+  return (
+    <section className="lifestyle-ads-wrap" aria-label="ZawadiMart lifestyle promotions">
+      <div className="container lifestyle-ads">
+        {ads.map((ad)=>(
+          <Link key={ad.title} to={ad.to} className={`lifestyle-ad ${ad.className}`}>
+            <img src={ad.image} alt="" loading="lazy"/>
+            <div className="lifestyle-ad-shade"/>
+            <div className="lifestyle-ad-copy">
+              <span>ZAWADIMART</span>
+              <h3>{ad.title}</h3>
+              <p>{ad.text}</p>
+              <b>{ad.cta}<ChevronRight size={15}/></b>
+            </div>
+          </Link>
+        ))}
+      </div>
+      <div className="container lifestyle-note">Lifestyle campaign imagery used for promotional presentation.</div>
+    </section>
+  );
+}
+
 const CategoryBubbles=()=>(
   <section className="container category-bubbles">
     {categories.slice(0,8).map(c=><Link key={c.slug} to={'/category/'+c.slug}><div><img src={c.image} alt={c.name}/></div><span>{c.short}</span></Link>)}

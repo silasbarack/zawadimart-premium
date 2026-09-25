@@ -366,3 +366,25 @@ footer .payment-marks{margin-top:8px}footer .pay-logo{background:#fff}
   .tab-card-logos .pay-logo.visa img{max-width:38px}
   .tab-card-logos .pay-logo.mastercard img{max-width:44px}
 }
+
+/* People-led ZawadiMart lifestyle advertising */
+.lifestyle-ads-wrap{background:#f3f3f3;padding:4px 0 16px}
+.lifestyle-ads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.lifestyle-ad{position:relative;min-height:250px;border-radius:14px;overflow:hidden;background:#ddd;isolation:isolate}
+.lifestyle-ad img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+.lifestyle-ad:hover img{transform:scale(1.025)}
+.lifestyle-ad-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(12,12,12,.72),rgba(12,12,12,.22) 58%,rgba(12,12,12,.04));z-index:1}
+.lifestyle-ad-copy{position:relative;z-index:2;max-width:58%;padding:28px 26px;color:#fff}
+.lifestyle-ad-copy>span{font-size:7px;font-weight:900;letter-spacing:.16em;color:#ffd39b}
+.lifestyle-ad-copy h3{margin:7px 0 7px;font-size:24px;line-height:1.03;letter-spacing:-.7px}
+.lifestyle-ad-copy p{margin:0 0 13px;font-size:9px;line-height:1.55;color:#f1f1f1}
+.lifestyle-ad-copy b{display:inline-flex;align-items:center;gap:3px;padding:8px 10px;border-radius:7px;background:#fff;color:#232323;font-size:7.5px}
+.lifestyle-note{padding-top:7px;color:#8a8a8a;font-size:6.5px;text-align:right}
+@media(max-width:780px){
+  .lifestyle-ads{grid-template-columns:1fr;gap:9px}
+  .lifestyle-ad{min-height:210px}
+  .lifestyle-ad-copy{max-width:68%;padding:22px 18px}
+  .lifestyle-ad-copy h3{font-size:20px}
+  .lifestyle-ad-copy p{font-size:7.5px}
+  .lifestyle-note{text-align:center;font-size:6px}
+}
