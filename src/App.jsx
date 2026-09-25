@@ -235,12 +235,24 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
         <div className="container header-main">
           <button className="menu-btn" onClick={()=>setMenuOpen(true)}><Menu/></button>
           <Link to="/" className="brand"><BrandLogo/></Link>
-          <form className="search-box" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/><button>Search</button></form>
+          <div className="header-search-stack">
+            <form className="search-box" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/><button>Search</button></form>
+            <div className="header-payment-row" aria-label="Accepted payment methods">
+              <span className="header-payment-label">Pay securely with</span>
+              <PaymentMarks compact withLabel={false}/>
+            </div>
+          </div>
           <Link to="/account" className="head-icon"><CircleUserRound/><span>Account</span></Link>
           <Link to="/cart" className="head-icon cart-link"><ShoppingCart/><span>Cart</span>{cartCount>0&&<i>{cartCount}</i>}</Link>
         </div>
         <div className="container mobile-search-row">
-          <form className="search-box mobile-search" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/></form>
+          <div className="mobile-search-stack">
+            <form className="search-box mobile-search" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/></form>
+            <div className="mobile-payment-row" aria-label="Accepted payment methods">
+              <span>Pay securely with</span>
+              <PaymentMarks compact withLabel={false}/>
+            </div>
+          </div>
         </div>
       </header>
       {location.pathname === '/' && <PromoCarousel/>}
@@ -644,7 +656,20 @@ function NotFound(){return <main className="container narrow"><Empty icon={<span
 
 function InfoBlock(){return <section className="container info-block"><h2>ZawadiMart Kenya — Shopping Made Easier</h2><p>Explore a broad catalogue of products for everyday Kenyan life, including phones, electronics, appliances, computing, fashion, beauty, home essentials and more. ZawadiMart is designed as a realistic e-commerce shopping experience with transparent KES pricing, product categories, cart functionality and convenient checkout flows.</p></section>}
 
-function Footer(){return <footer><div className="back-top" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>⌃<span>BACK TO TOP</span></div><div className="container footer-grid"><div><BrandLogo compact/><p>Modern online shopping for Kenya.</p><PaymentMarks compact withLabel={false}/></div><div><h4>HELP</h4><Link to="/track-order">Track Order</Link><Link to="/account">My Account</Link><span>Shipping & Delivery</span><span>Returns</span></div><div><h4>ABOUT</h4><Link to="/shop">Shop</Link><Link to="/deals">Deals</Link><span>Terms & Conditions</span><span>Privacy Notice</span></div><div><h4>PAYMENTS</h4><span>M-PESA checkout</span><span>Visa checkout</span><span>Mastercard checkout</span><span>Live processing requires configured merchant gateway</span></div></div><div className="footer-bottom">© 2026 ZawadiMart. Frontend demonstration.</div></footer>}
+function Footer(){return <footer>
+  <div className="back-top" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>⌃<span>BACK TO TOP</span></div>
+  <div className="container footer-grid">
+    <div><BrandLogo compact/><p>Modern online shopping for Kenya.</p></div>
+    <div><h4>HELP</h4><Link to="/track-order">Track Order</Link><Link to="/account">My Account</Link><span>Shipping & Delivery</span><span>Returns</span></div>
+    <div><h4>ABOUT</h4><Link to="/shop">Shop</Link><Link to="/deals">Deals</Link><span>Terms & Conditions</span><span>Privacy Notice</span></div>
+    <div><h4>PAYMENTS</h4><span>M-PESA checkout</span><span>Visa checkout</span><span>Mastercard checkout</span><span>Live processing requires configured merchant gateway</span></div>
+  </div>
+  <div className="container footer-payment-panel">
+    <div className="footer-payment-copy"><strong>Secure payment methods</strong><span>Pay using M-PESA, Visa or Mastercard at checkout.</span></div>
+    <PaymentMarks withLabel={false}/>
+  </div>
+  <div className="footer-bottom">© 2026 ZawadiMart. Frontend demonstration.</div>
+</footer>}
 
 function MobileNav({cartCount}){return <nav className="mobile-nav"><NavLink to="/"><Home/><span>Home</span></NavLink><NavLink to="/shop"><LayoutGrid/><span>Shop</span></NavLink><NavLink to="/deals"><Tag/><span>Deals</span></NavLink><NavLink to="/cart" className="mobile-cart"><ShoppingCart/><span>Cart</span>{cartCount>0&&<i>{cartCount}</i>}</NavLink><NavLink to="/account"><CircleUserRound/><span>Account</span></NavLink></nav>}
 
