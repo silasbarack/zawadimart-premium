@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ChevronRight, CircleCheck, CircleUserRound, CreditCard, Heart, Home,
+  ChevronLeft, ChevronRight, CircleCheck, CircleUserRound, CreditCard, Heart, Home,
   LayoutGrid, Menu, Minus, PackageCheck, Plus, Search, ShieldCheck,
   ShoppingBag, ShoppingCart, Smartphone, Star, Tag, Trash2, Truck, X
 } from 'lucide-react';
@@ -149,6 +149,7 @@ function ProductLoadingOverlay({ product }) {
 
 function Header({cartCount,menuOpen,setMenuOpen}) {
   const navigate=useNavigate();
+  const location=useLocation();
   const [q,setQ]=useState('');
   const submit=(e)=>{e.preventDefault();navigate(q.trim()?'/shop?q='+encodeURIComponent(q.trim()):'/shop');};
   return (
@@ -166,6 +167,7 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
           <form className="search-box mobile-search" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/></form>
         </div>
       </header>
+      {location.pathname === '/' && <PromoCarousel/>}
       <nav className="desktop-cat-nav">
         <div className="container cat-nav-inner">
           <Link to="/shop"><LayoutGrid size={17}/>All Categories</Link>
@@ -185,6 +187,103 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
         </aside>
       </div>
     </>
+  );
+}
+
+function PromoCarousel(){
+  const [active,setActive]=useState(0);
+  const [touchStart,setTouchStart]=useState(null);
+  const slides=[
+    {
+      kicker:'TECH WEEK',
+      title:'Upgrade your phone',
+      text:'Smartphones, tablets and accessories with competitive Kenyan prices.',
+      cta:'Shop phones',
+      to:'/category/phones-tablets',
+      image:products[1].image,
+      image2:products[56].image,
+      tone:'tech'
+    },
+    {
+      kicker:'HOME UPGRADE',
+      title:'Make home easier',
+      text:'Appliances and kitchen essentials for everyday Kenyan homes.',
+      cta:'Shop appliances',
+      to:'/category/home-appliances',
+      image:products[18].image,
+      image2:products[24].image,
+      tone:'home'
+    },
+    {
+      kicker:'STYLE DROP',
+      title:'Fresh looks, better prices',
+      text:'Fashion, shoes and accessories for work, weekends and everything between.',
+      cta:'Shop fashion',
+      to:'/category/fashion',
+      image:products[31].image,
+      image2:products[34].image,
+      tone:'fashion'
+    },
+    {
+      kicker:'COMPUTING DEALS',
+      title:'Ready for work & study',
+      text:'Laptops, monitors and accessories for school, business and creators.',
+      cta:'Shop computing',
+      to:'/category/computing',
+      image:products[12].image,
+      image2:products[15].image,
+      tone:'computing'
+    }
+  ];
+
+  useEffect(()=>{
+    const timer=window.setInterval(()=>setActive(i=>(i+1)%slides.length),4600);
+    return ()=>window.clearInterval(timer);
+  },[]);
+
+  const move=(direction)=>setActive(i=>(i+direction+slides.length)%slides.length);
+  const onTouchEnd=(event)=>{
+    if(touchStart===null) return;
+    const end=event.changedTouches?.[0]?.clientX ?? touchStart;
+    const delta=end-touchStart;
+    if(Math.abs(delta)>45) move(delta<0?1:-1);
+    setTouchStart(null);
+  };
+
+  return (
+    <section className="ad-carousel-wrap" aria-label="Featured promotions">
+      <div className="container ad-carousel">
+        <div
+          className="ad-track"
+          style={{transform:`translateX(-${active*100}%)`}}
+          onTouchStart={(e)=>setTouchStart(e.touches[0].clientX)}
+          onTouchEnd={onTouchEnd}
+        >
+          {slides.map((slide,index)=>(
+            <article className={`ad-slide ${slide.tone}`} key={slide.title} aria-hidden={active!==index}>
+              <div className="ad-copy">
+                <span>{slide.kicker}</span>
+                <h2>{slide.title}</h2>
+                <p>{slide.text}</p>
+                <Link to={slide.to}>{slide.cta}<ChevronRight size={17}/></Link>
+              </div>
+              <div className="ad-visual">
+                <div className="ad-image primary"><img src={slide.image} alt=""/></div>
+                <div className="ad-image secondary"><img src={slide.image2} alt=""/></div>
+                <span className="ad-badge">ZawadiMart Deals</span>
+              </div>
+            </article>
+          ))}
+        </div>
+        <button className="ad-arrow prev" onClick={()=>move(-1)} aria-label="Previous promotion"><ChevronLeft/></button>
+        <button className="ad-arrow next" onClick={()=>move(1)} aria-label="Next promotion"><ChevronRight/></button>
+        <div className="ad-dots" role="tablist" aria-label="Promotion slides">
+          {slides.map((slide,index)=>(
+            <button key={slide.title} className={active===index?'active':''} onClick={()=>setActive(index)} aria-label={`Show promotion ${index+1}`}/>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
