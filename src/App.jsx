@@ -203,10 +203,7 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
           <form className="search-box mobile-search" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/></form>
         </div>
       </header>
-      {location.pathname === '/' && <>
-        <PromoCarousel/>
-        <div className="payment-support-bar"><div className="container"><PaymentMarks/></div></div>
-      </>}
+      {location.pathname === '/' && <PromoCarousel/>}
       <nav className="desktop-cat-nav">
         <div className="container cat-nav-inner">
           <Link to="/shop"><LayoutGrid size={17}/>All Categories</Link>
