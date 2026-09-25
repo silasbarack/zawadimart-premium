@@ -320,3 +320,12 @@ footer .payment-marks{margin-top:8px}footer .pay-logo{background:#fff}
   .campaign-model-note{font-size:5.5px;left:7px;bottom:6px}
   .payment-heading-row{align-items:flex-start;flex-direction:column}
 }
+
+.detail-payment-marks{margin-top:16px;padding-top:14px;border-top:1px solid #ececec;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.detail-payment-marks>span{font-size:8px;color:#777;font-weight:700}
+.summary-payments{justify-content:flex-start!important;padding:10px 0 0!important;border-top:1px solid #eee;margin-top:4px}
+.summary-payments .payment-marks{gap:5px}
+@media(max-width:780px){
+  .detail-payment-marks{align-items:flex-start;flex-direction:column}
+  .summary-payments{justify-content:center!important}
+}
