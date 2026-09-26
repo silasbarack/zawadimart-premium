@@ -25,7 +25,7 @@ function BrandLogo({ compact=false }) {
         <circle cx="38.2" cy="11.2" r="4.6" fill="#f6b73c"/>
         <path d="M38.2 8.8v4.8M35.8 11.2h4.8" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
       </svg>
-      <span className="brand-wordmark"><span>Zawadi</span><strong>Mart</strong><small>SHOP SMART · LIVE BETTER</small></span>
+      <span className="brand-wordmark"><span className="brand-name">Zawadi<strong>Mart</strong></span><small>SHOP SMART · LIVE BETTER</small></span>
     </span>
   );
 }
