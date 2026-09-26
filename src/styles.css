@@ -772,3 +772,26 @@ input,select{font-size:12px}
   .cod-strip span{font-size:9px}
   .cod-strip a{font-size:9px}
 }
+
+
+/* Brand integrity: ZawadiMart must always render as one uninterrupted word */
+.brand-wordmark{grid-template-columns:1fr}
+.brand-wordmark .brand-name{
+  display:inline-flex;
+  align-items:baseline;
+  white-space:nowrap;
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:-.9px;
+  line-height:.88;
+  color:#151515;
+}
+.brand-wordmark .brand-name>strong{
+  font:inherit;
+  color:var(--green);
+}
+.brand-logo.compact .brand-wordmark .brand-name{font-size:18px}
+.footer-grid .brand-wordmark .brand-name{color:#fff}
+@media(max-width:780px){
+  .brand-wordmark .brand-name{font-size:19px}
+}
