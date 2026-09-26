@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SafariStay Kenya — Hotel Booking UI Prototype</title>
+  <meta name="description" content="A visual frontend prototype for a Kenyan hotel booking platform." />
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="announce">🇰🇪 Local stays, transparent pricing, secure Kenyan payments.</div>
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a class="brand" href="#" aria-label="SafariStay Kenya home">
+        <span class="brand-mark">S</span>
+        <span class="brand-copy"><strong>SafariStay</strong><small>KENYA</small></span>
+      </a>
+      <nav class="desktop-nav" aria-label="Primary navigation">
+        <a class="active" href="#stays">Stays</a><a href="#destinations">Destinations</a><a href="#offers">Offers</a><a href="#business">Business travel</a>
+      </nav>
+      <div class="nav-actions"><button class="icon-btn" aria-label="Currency">KES</button><button class="ghost-btn">List your property</button><button class="signin-btn">Sign in</button></div>
+      <button class="menu-btn" aria-label="Open menu">☰</button>
+    </div>
+  </header>
+  <main>
+    <section class="hero" id="stays"><div class="hero-scrim"></div><div class="container hero-content">
+      <div class="eyebrow">HANDPICKED STAYS ACROSS KENYA</div><h1>Find a stay that feels<br><em>uniquely Kenyan.</em></h1>
+      <p>From Nairobi city escapes to Diani beachfront villas and Naivasha weekend hideaways.</p>
+      <div class="search-shell" role="search">
+        <div class="search-item wide"><span class="search-icon">⌖</span><div><label>Where are you going?</label><button id="destinationBtn">Nairobi, Kenya</button></div></div>
+        <div class="search-item"><span class="search-icon">▣</span><div><label>Check in</label><button>09 Oct 2026</button></div></div>
+        <div class="search-item"><span class="search-icon">▣</span><div><label>Check out</label><button>11 Oct 2026</button></div></div>
+        <div class="search-item"><span class="search-icon">◉</span><div><label>Guests & rooms</label><button>2 guests · 1 room</button></div></div>
+        <button class="search-btn" id="searchBtn">Search stays</button>
+      </div>
+      <div class="quick-links"><span>Popular:</span><button data-dest="Nairobi, Kenya">Nairobi</button><button data-dest="Diani Beach, Kenya">Diani</button><button data-dest="Naivasha, Kenya">Naivasha</button><button data-dest="Nanyuki, Kenya">Nanyuki</button><button data-dest="Maasai Mara, Kenya">Maasai Mara</button></div>
+    </div></section>
+    <section class="trust-strip"><div class="container trust-grid">
+      <div><span class="trust-icon">✓</span><div><strong>Verified properties</strong><small>Reviewed before listing</small></div></div>
+      <div><span class="trust-icon">M</span><div><strong>Pay your way</strong><small>M-PESA, Visa & Mastercard</small></div></div>
+      <div><span class="trust-icon">24</span><div><strong>Kenya-based support</strong><small>Help when you need it</small></div></div>
+      <div><span class="trust-icon">↻</span><div><strong>Flexible bookings</strong><small>Clear cancellation terms</small></div></div>
+    </div></section>
+    <section class="section" id="destinations"><div class="container">
+      <div class="section-head"><div><span class="kicker">EXPLORE KENYA</span><h2>Where do you want to wake up?</h2></div><a href="#">View all destinations →</a></div>
+      <div class="dest-grid">
+        <article class="dest-card large" style="--bg:url('https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=1200&q=85')"><div class="overlay"></div><div class="dest-copy"><span>COAST</span><h3>Diani Beach</h3><p>124 stays</p></div></article>
+        <article class="dest-card" style="--bg:url('https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1000&q=85')"><div class="overlay"></div><div class="dest-copy"><span>CITY</span><h3>Nairobi</h3><p>386 stays</p></div></article>
+        <article class="dest-card" style="--bg:url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1000&q=85')"><div class="overlay"></div><div class="dest-copy"><span>ESCAPE</span><h3>Naivasha</h3><p>97 stays</p></div></article>
+        <article class="dest-card wide-card" style="--bg:url('https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1200&q=85')"><div class="overlay"></div><div class="dest-copy"><span>SAFARI</span><h3>Maasai Mara</h3><p>68 camps & lodges</p></div></article>
+      </div>
+    </div></section>
+    <section class="section soft" id="offers"><div class="container">
+      <div class="section-head"><div><span class="kicker">CURATED FOR YOU</span><h2>Top stays this week</h2><p>Beautiful properties with excellent guest feedback.</p></div><div class="filters"><button class="filter active">All stays</button><button class="filter">City</button><button class="filter">Beach</button><button class="filter">Safari</button></div></div>
+      <div class="stay-grid">
+        <article class="stay-card"><div class="stay-photo" style="--bg:url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=85')"><span class="badge">Guest favourite</span><button class="heart">♡</button></div><div class="stay-body"><div class="stay-meta"><span>Westlands · Nairobi</span><span class="rating">★ 4.9</span></div><h3>Acacia Grand Nairobi</h3><p>Contemporary city hotel · Rooftop pool · Breakfast</p><div class="price"><div><small>From</small><strong>KES 14,800</strong><span>/ night</span></div><button class="room-btn">View rooms</button></div></div></article>
+        <article class="stay-card"><div class="stay-photo" style="--bg:url('https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=85')"><span class="badge sand">Beach escape</span><button class="heart">♡</button></div><div class="stay-body"><div class="stay-meta"><span>Diani Beach · Kwale</span><span class="rating">★ 4.8</span></div><h3>Maji House Diani</h3><p>Oceanfront suites · Private beach · Airport transfer</p><div class="price"><div><small>From</small><strong>KES 18,500</strong><span>/ night</span></div><button class="room-btn">View rooms</button></div></div></article>
+        <article class="stay-card"><div class="stay-photo" style="--bg:url('https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1200&q=85')"><span class="badge green">Weekend pick</span><button class="heart">♡</button></div><div class="stay-body"><div class="stay-meta"><span>Lake Naivasha · Nakuru</span><span class="rating">★ 4.7</span></div><h3>Rift Valley Lakehouse</h3><p>Lake views · Garden dining · Family friendly</p><div class="price"><div><small>From</small><strong>KES 12,900</strong><span>/ night</span></div><button class="room-btn">View rooms</button></div></div></article>
+      </div>
+    </div></section>
+    <section class="section payment-section"><div class="container payment-card">
+      <div class="payment-copy"><span class="kicker inverse">EASY CHECKOUT</span><h2>Book now. Pay securely.</h2><p>Designed for Kenyan travellers with familiar local and international payment options.</p><div class="pay-icons"><span class="mpesa">M‑PESA</span><span>VISA</span><span>Mastercard</span><span>Secure checkout</span></div></div>
+      <div class="mini-checkout"><div class="mini-head"><strong>Your stay</strong><span>2 nights</span></div><div class="mini-hotel"><div class="thumb"></div><div><strong>Acacia Grand Nairobi</strong><small>Deluxe King · Breakfast included</small></div></div><div class="line"><span>Room total</span><strong>KES 29,600</strong></div><div class="line"><span>Taxes & fees</span><strong>KES 4,736</strong></div><div class="line total"><span>Total</span><strong>KES 34,336</strong></div><button>Continue to payment</button></div>
+    </div></section>
+    <section class="section" id="business"><div class="container split-card"><div class="split-photo"></div><div class="split-copy"><span class="kicker">SAFARISTAY FOR BUSINESS</span><h2>Business travel, without the back-and-forth.</h2><p>Centralised bookings, traveller profiles, invoices and company rates — built for growing Kenyan teams.</p><ul><li>Company travel dashboard</li><li>Downloadable VAT-ready invoices</li><li>Approval-ready booking workflow</li></ul><button>Explore business travel</button></div></div></section>
+  </main>
+  <footer><div class="container footer-grid"><div><a class="brand footer-brand" href="#"><span class="brand-mark">S</span><span class="brand-copy"><strong>SafariStay</strong><small>KENYA</small></span></a><p>A fictional UI prototype created to demonstrate a modern Kenyan hotel booking experience.</p></div><div><strong>Explore</strong><a href="#">Nairobi hotels</a><a href="#">Coast stays</a><a href="#">Safari lodges</a></div><div><strong>Support</strong><a href="#">Help centre</a><a href="#">Booking support</a><a href="#">Cancellation policy</a></div><div><strong>Partners</strong><a href="#">List your property</a><a href="#">Partner login</a><a href="#">Business travel</a></div></div><div class="container footer-bottom"><span>© 2026 SafariStay Kenya — UI prototype only.</span><span>Privacy · Terms · Cookies</span></div></footer>
+  <div class="toast" id="toast">Visual prototype only — booking logic comes next.</div>
+  <script src="app.js"></script>
+</body>
+</html>
