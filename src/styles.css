@@ -620,3 +620,155 @@ input,select{font-size:11px}
   .footer-bottom{font-size:8px}
   .mobile-nav a{font-size:8px}
 }
+
+
+/* TicketFlow-scale typography normalization */
+body{font-size:16px;line-height:1.5}
+small{font-size:11px}
+.top-strip{font-size:13px}
+.search-box input{font-size:14px}
+.search-box button{font-size:13px}
+.header-payment-label{font-size:12px}
+.mobile-payment-row>span{font-size:11px}
+.head-icon{font-size:11px}
+.cart-link i{font-size:10px}
+.cat-nav-inner a{font-size:12px}
+.drawer aside>a{font-size:13px}
+.brand-wordmark>small{font-size:7px}
+.hero-copy>span{font-size:12px}
+.hero-copy p{font-size:15px}
+.hero-copy a{font-size:12px}
+.category-bubbles span{font-size:12px}
+.stock-label{font-size:10px}
+.product-body h3{font-size:13px;height:40px}
+.rating{font-size:10px}
+.rating span{font-size:10px}
+.price{font-size:18px}
+.old-row del{font-size:10px}
+.old-row span{font-size:9px}
+.card-actions>button:first-child{font-size:10px}
+.info-block p{font-size:13px}
+.breadcrumb{font-size:11px}
+.eyebrow{font-size:11px}
+.shop-top p{font-size:12px}
+.shop-top select{font-size:11px}
+.filter-row button{font-size:11px}
+.category-banner p,.promo-banner p{font-size:13px}
+.promo-banner span{font-size:11px}
+.detail-image>span{font-size:11px}
+.detail-copy>p{font-size:13px}
+.in-stock{font-size:11px}
+.qty span{font-size:11px}
+.buy{font-size:11px}
+.benefits b{font-size:11px}
+.benefits small{font-size:10px}
+.cart-row h3{font-size:13px}
+.cart-row strong{font-size:14px}
+.cart-controls>button{font-size:11px}
+.summary>div{font-size:12px}
+.summary>a{font-size:11px}
+.summary p{font-size:10px}
+label{font-size:11px}
+input,select{font-size:12px}
+.payment-tabs b{font-size:11px}
+.payment-tabs small{font-size:10px}
+.payment-panel p{font-size:10px}
+.mpesa{font-size:10px}
+.error{font-size:11px}
+.checkout-items b{font-size:11px}
+.checkout-items small{font-size:10px}
+.checkout-items strong{font-size:11px}
+.place-order{font-size:11px}
+.success p,.account-card p,.empty p{font-size:12px}
+.success a,.primary,.empty a{font-size:11px}
+.toast{font-size:11px}
+.back-top span{font-size:10px}
+.footer-grid p{font-size:11px}
+.footer-grid h4{font-size:12px}
+.footer-grid a,.footer-grid span{font-size:11px}
+.footer-payment-copy strong{font-size:13px}
+.footer-payment-copy span{font-size:11px}
+.footer-bottom{font-size:10px}
+.payment-label{font-size:11px}
+.checkout-brand-row>span:last-child{font-size:10px}
+.detail-payment-marks>span{font-size:11px}
+.campaign-model-note{font-size:9px}
+.ad-copy>span{font-size:10px}
+.ad-copy p{font-size:11px}
+.ad-copy a{font-size:10px}
+.ad-badge{font-size:9px}
+.ad-kicker{font-size:10px}
+.people-ad-copy p{font-size:11px}
+.ad-cta-row a{font-size:10px}
+.campaign-note{font-size:10px}
+.people-product>span{font-size:9px}
+.lifestyle-ad-copy>span{font-size:10px}
+.lifestyle-ad-copy p{font-size:11px}
+.lifestyle-ad-copy b{font-size:10px}
+.lifestyle-note{font-size:9px}
+.flash-countdown{font-size:10px}
+.app-copy b{font-size:11px}
+.app-copy small{font-size:9px}
+.app-download-inner>a{font-size:10px}
+.cod-strip strong{font-size:12px}
+.cod-strip span{font-size:9px}
+.cod-strip a{font-size:10px}
+
+@media(max-width:780px){
+  body{font-size:15px}
+  small{font-size:10.5px}
+  .mobile-search input{font-size:14px}
+  .mobile-payment-row>span{font-size:11px}
+  .hero-copy>span{font-size:11px}
+  .hero-copy p{font-size:12px}
+  .hero-copy a{font-size:11px}
+  .category-bubbles span{font-size:11px}
+  .product-body h3{font-size:12px;height:36px}
+  .rating{font-size:10px}
+  .rating span{font-size:10px}
+  .price{font-size:16px}
+  .old-row del{font-size:10px}
+  .old-row span{font-size:9px}
+  .stock-label{font-size:9px}
+  .info-block p{font-size:12px}
+  .shop-top p{font-size:11px}
+  .shop-top select,.filter-row button{font-size:11px}
+  .category-banner p,.promo-banner p{font-size:12px}
+  .detail-copy>p{font-size:12px}
+  .benefits b{font-size:10px}
+  .benefits small{font-size:9px}
+  .cart-row h3{font-size:12px}
+  .cart-row strong{font-size:13px}
+  .summary>div{font-size:11px}
+  label{font-size:10px}
+  input,select{font-size:11px}
+  .payment-tabs b{font-size:10px}
+  .payment-tabs small{font-size:9px}
+  .payment-panel p{font-size:9.5px}
+  .footer-grid p{font-size:10px}
+  .footer-grid h4{font-size:11px}
+  .footer-grid a,.footer-grid span{font-size:10px}
+  .footer-payment-copy strong{font-size:12px}
+  .footer-payment-copy span{font-size:10px}
+  .footer-bottom{font-size:9px}
+  .mobile-nav a{font-size:9px}
+  .ad-copy>span{font-size:9px}
+  .ad-copy p{font-size:10px}
+  .ad-copy a{font-size:9px}
+  .ad-badge{font-size:8.5px}
+  .ad-kicker{font-size:9px}
+  .people-ad-copy p{font-size:10px}
+  .ad-cta-row a{font-size:9px}
+  .people-product>span{font-size:8px}
+  .lifestyle-ad-copy>span{font-size:9px}
+  .lifestyle-ad-copy p{font-size:10px}
+  .lifestyle-ad-copy b{font-size:9px}
+  .lifestyle-note{font-size:8.5px}
+  .flash-countdown{font-size:9px}
+  .app-copy b{font-size:10px}
+  .app-copy small{font-size:9px}
+  .app-download-inner>a{font-size:9px}
+  .cod-strip strong{font-size:11px}
+  .cod-strip span{font-size:9px}
+  .cod-strip a{font-size:9px}
+}
