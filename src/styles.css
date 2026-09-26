@@ -510,3 +510,113 @@ footer .payment-marks{margin-top:8px}footer .pay-logo{background:#fff}
 .payment-marks .pay-logo.official.mpesa img{max-height:28px;max-width:60px;margin:-4px 0}
 .payment-marks.compact .pay-logo.official.mpesa img{max-height:24px;max-width:48px;margin:-4px 0}
 .footer-payment-panel .payment-marks .pay-logo.official.mpesa img{max-height:32px;max-width:66px;margin:-5px 0}
+
+
+/* Readability pass — slightly larger type on desktop and mobile */
+body{font-size:15px}
+.top-strip{font-size:12px}
+.search-box input{font-size:13px}
+.search-box button{font-size:12px}
+.header-payment-label,.mobile-payment-row>span{font-size:8px}
+.head-icon{font-size:9px}
+.cat-nav-inner a{font-size:11px}
+.drawer aside>a{font-size:12px}
+.hero-copy>span{font-size:11px}
+.hero-copy h1{font-size:52px}
+.hero-copy p{font-size:14px}
+.hero-copy a{font-size:11px}
+.category-bubbles span{font-size:10.5px}
+.deal-head h2{font-size:24px}
+.stock-label{font-size:9px}
+.product-body h3{font-size:12px;height:37px}
+.rating{font-size:9px}
+.price{font-size:17px}
+.old-row del{font-size:9px}
+.old-row span{font-size:8px}
+.card-actions>button:first-child{font-size:9px}
+.info-block h2{font-size:22px}
+.info-block p{font-size:12px}
+.breadcrumb{font-size:10px}
+.eyebrow{font-size:10px}
+.shop-top h1,.category-banner h1,.promo-banner h1,.product-detail h1,.checkout-title h1,.narrow h1,.page-title{font-size:32px}
+.shop-top p{font-size:11px}
+.shop-top select{font-size:10px}
+.filter-row button{font-size:10px}
+.category-banner p,.promo-banner p{font-size:12px}
+.promo-banner span{font-size:10px}
+.detail-image>span{font-size:10px}
+.detail-price{font-size:26px}
+.detail-price del{font-size:13px}
+.detail-copy>p{font-size:12px}
+.in-stock{font-size:10px}
+.qty span{font-size:10px}
+.buy{font-size:10px}
+.benefits b{font-size:10px}
+.benefits small{font-size:9px}
+.cart-row h3{font-size:12px}
+.cart-row strong{font-size:13px}
+.cart-controls>button{font-size:10px}
+.summary h2,.checkout-items h2,.form-card h2{font-size:17px}
+.summary>div{font-size:11px}
+.summary-total b{font-size:16px}
+.summary>a{font-size:10px}
+.summary p{font-size:9px}
+label{font-size:10px}
+input,select{font-size:11px}
+.payment-tabs b{font-size:10px}
+.payment-tabs small{font-size:9px}
+.payment-panel p{font-size:9px}
+.mpesa{font-size:9px}
+.error{font-size:10px}
+.checkout-items b{font-size:10px}
+.checkout-items small{font-size:9px}
+.success p,.account-card p,.empty p{font-size:11px}
+.success a,.primary,.empty a{font-size:10px}
+.toast{font-size:10px}
+.back-top span{font-size:9px}
+.footer-grid p{font-size:10px}
+.footer-grid h4{font-size:11px}
+.footer-grid a,.footer-grid span{font-size:10px}
+.footer-payment-copy strong{font-size:12px}
+.footer-payment-copy span{font-size:10px}
+.footer-bottom{font-size:9px}
+
+@media(max-width:780px){
+  body{font-size:14px}
+  .brand-wordmark>span,.brand-wordmark>strong{font-size:19px}
+  .mobile-search input{font-size:13px}
+  .mobile-payment-row>span{font-size:8px}
+  .hero-copy>span{font-size:10px}
+  .hero-copy h1{font-size:34px}
+  .hero-copy p{font-size:11px;line-height:1.55}
+  .hero-copy a{font-size:10px}
+  .category-bubbles span{font-size:10px}
+  .deal-head h2{font-size:20px}
+  .product-body h3{font-size:11px;height:34px}
+  .rating{font-size:9px}
+  .price{font-size:15px}
+  .stock-label{font-size:8px}
+  .info-block h2{font-size:19px}
+  .info-block p{font-size:11px}
+  .shop-top h1,.category-banner h1,.promo-banner h1,.product-detail h1,.checkout-title h1,.narrow h1,.page-title{font-size:26px}
+  .shop-top p{font-size:10px}
+  .shop-top select,.filter-row button{font-size:10px}
+  .category-banner p,.promo-banner p{font-size:11px}
+  .detail-copy>p{font-size:11px}
+  .detail-price{font-size:22px}
+  .benefits b{font-size:9px}
+  .benefits small{font-size:8px}
+  .cart-row h3{font-size:11px}
+  .cart-row strong{font-size:12px}
+  .summary h2,.checkout-items h2,.form-card h2{font-size:16px}
+  .summary>div{font-size:10px}
+  label{font-size:9px}
+  input,select{font-size:10px}
+  .footer-grid p{font-size:9px}
+  .footer-grid h4{font-size:10px}
+  .footer-grid a,.footer-grid span{font-size:9px}
+  .footer-payment-copy strong{font-size:11px}
+  .footer-payment-copy span{font-size:9px}
+  .footer-bottom{font-size:8px}
+  .mobile-nav a{font-size:8px}
+}
