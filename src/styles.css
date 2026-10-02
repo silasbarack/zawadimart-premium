@@ -265,7 +265,7 @@ footer{margin-top:4px;background:#303030;color:#eee}.back-top{height:58px;backgr
 /* People-focused lifestyle campaign ads */
 .people-ad{position:relative;min-height:250px;color:#fff;background:#1b1b1b}
 .people-photo{position:absolute;inset:0;overflow:hidden}
-.people-photo img{width:100%;height:100%;object-fit:cover}
+.people-photo img{width:100%;height:100%;object-fit:cover;object-position:center 22%}
 .people-photo-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,10,10,.84) 0%,rgba(10,10,10,.66) 38%,rgba(10,10,10,.18) 68%,rgba(10,10,10,.04) 100%)}
 .campaign-mark{position:absolute;top:16px;left:18px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.93);box-shadow:0 6px 20px rgba(0,0,0,.14)}
 .campaign-mark .brand-wordmark>span{color:#111}
