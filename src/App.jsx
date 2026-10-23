@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ChevronLeft, ChevronRight, CircleCheck, CircleUserRound, Clock3, Heart, Home,
-  LayoutGrid, Menu, Minus, PackageCheck, Plus, Search, ShieldCheck,
+  Banknote, ChevronLeft, ChevronRight, CircleAlert, CircleCheck, CircleUserRound, Clock3, Heart, Home,
+  LayoutGrid, LogOut, Menu, Minus, PackageCheck, Plus, Search, ShieldCheck,
   ShoppingBag, ShoppingCart, Star, Tag, Trash2, Truck, X
 } from 'lucide-react';
 import {
   Link, NavLink, Route, Routes, useLocation, useNavigate, useParams, useSearchParams
 } from 'react-router-dom';
-import { categories, getCategory, getProduct, money, products } from './data';
+import { money, products } from './data';
+import { api, errorText, loadSession, saveSession } from './api';
+import { useCatalog } from './catalog';
 import mpesaLogo from './assets/payments/mpesa.svg';
 import visaLogo from './assets/payments/visa.svg';
 import mastercardLogo from './assets/payments/mastercard.svg';
@@ -105,7 +107,19 @@ function FlashCountdown() {
   return <span className="flash-countdown"><Clock3 size={16}/>{hh}h : {mm}m : {ss}s</span>;
 }
 
+const KENYAN_PHONE = /^((\+?254)|0)?[17]\d{8}$/;
+
+// Combines a device cart with the account's saved cart, keeping the larger quantity.
+const mergeCarts = (local, saved) => {
+  const merged = new Map(local.map((item) => [item.id, item.qty]));
+  saved.forEach((item) => merged.set(item.id, Math.max(merged.get(item.id) || 0, item.qty)));
+  return [...merged].map(([id, qty]) => ({ id, qty }));
+};
+
 function App() {
+  const { getProduct } = useCatalog();
+  const [session,setSession] = useState(loadSession);
+  const [cartSynced,setCartSynced] = useState(false);
   const [cart,setCart] = useState(() => {
     try { return JSON.parse(localStorage.getItem('zawadimart-cart')) || []; } catch { return []; }
   });
@@ -117,6 +131,33 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(()=>localStorage.setItem('zawadimart-cart',JSON.stringify(cart)),[cart]);
+
+  const signIn = (next) => { saveSession(next); setSession(next); };
+  const signOut = () => { saveSession(null); setSession(null); setWishlist([]); setCartSynced(false); };
+  const token = session?.token;
+
+  // Refresh the profile, and drop sessions the API no longer accepts.
+  useEffect(()=>{
+    if (!token) return;
+    api('/auth/me').then(({user})=>signIn({token,user})).catch((error)=>{ if (error.status===401) signOut(); });
+    api('/wishlist').then((saved)=>setWishlist(saved.productIds)).catch(()=>{});
+    let cancelled = false;
+    api('/cart').then((saved)=>{
+      if (cancelled) return;
+      setCart((local)=>mergeCarts(local, saved.items.map((item)=>({id:item.productId,qty:item.quantity}))));
+      setCartSynced(true);
+    }).catch(()=>{});
+    return () => { cancelled = true; };
+  },[token]);
+
+  // Keep the account's saved cart in step with this device.
+  useEffect(()=>{
+    if (!token || !cartSynced) return;
+    const timer = setTimeout(()=>{
+      api('/cart',{method:'PUT',body:{items:cart.map((item)=>({productId:item.id,quantity:Math.min(item.qty,100)}))}}).catch(()=>{});
+    },500);
+    return () => clearTimeout(timer);
+  },[cart,cartSynced,token]);
   useEffect(()=>{ setMenuOpen(false); window.scrollTo({top:0,behavior:'smooth'}); },[location.pathname]);
   useEffect(()=>{
     if (!productLoading) return;
@@ -135,6 +176,7 @@ function App() {
   };
   const addToCart = (id,qty=1) => {
     const p=getProduct(id);
+    if(!p||p.stock<=0) return notify('Sorry, this item is out of stock');
     setCart(c=>{
       const ex=c.find(i=>i.id===id);
       return ex ? c.map(i=>i.id===id?{...i,qty:Math.min(i.qty+qty,p.stock)}:i) : [...c,{id,qty:Math.min(qty,p.stock)}];
@@ -142,7 +184,11 @@ function App() {
     notify(`${p.name} added to cart`);
   };
   const setQty=(id,qty)=>setCart(c=>qty<=0?c.filter(i=>i.id!==id):c.map(i=>i.id===id?{...i,qty:Math.min(qty,getProduct(id).stock)}:i));
-  const toggleWishlist=(id)=>setWishlist(w=>w.includes(id)?w.filter(x=>x!==id):[...w,id]);
+  const toggleWishlist=(id)=>{
+    const saved=wishlist.includes(id);
+    setWishlist(w=>saved?w.filter(x=>x!==id):[...w,id]);
+    if(token) (saved?api('/wishlist/'+id,{method:'DELETE'}):api('/wishlist',{method:'POST',body:{productId:id}})).catch(()=>{});
+  };
 
   const openProduct = (product) => {
     if (!product || productLoading) return;
@@ -199,10 +245,11 @@ function App() {
         <Route path="/product/:id" element={<ProductPage {...shared}/>}/>
         <Route path="/deals" element={<DealsPage {...shared}/>}/>
         <Route path="/cart" element={<CartPage rows={rows} subtotal={subtotal} setQty={setQty} remove={(id)=>setCart(c=>c.filter(i=>i.id!==id))}/>}/>
-        <Route path="/checkout" element={<CheckoutPage rows={rows} subtotal={subtotal} clearCart={()=>setCart([])}/>}/>
-        <Route path="/order-success" element={<OrderSuccess/>}/>
+        <Route path="/checkout" element={<CheckoutPage rows={rows} subtotal={subtotal} clearCart={()=>setCart([])} user={session?.user}/>}/>
+        <Route path="/order-success" element={<OrderStatusPage/>}/>
+        <Route path="/orders/:orderNumber" element={<OrderStatusPage/>}/>
         <Route path="/track-order" element={<TrackOrder/>}/>
-        <Route path="/account" element={<AccountPage/>}/>
+        <Route path="/account" element={<AccountPage user={session?.user} signIn={signIn} signOut={signOut}/>}/>
         <Route path="*" element={<NotFound/>}/>
       </Routes>
       <Footer/>
@@ -226,6 +273,7 @@ function ProductLoadingOverlay({ product }) {
 }
 
 function Header({cartCount,menuOpen,setMenuOpen}) {
+  const {categories}=useCatalog();
   const navigate=useNavigate();
   const location=useLocation();
   const [q,setQ]=useState('');
@@ -451,13 +499,15 @@ function LifestyleAds(){
   );
 }
 
-const CategoryBubbles=()=>(
-  <section className="container category-bubbles" aria-label="Shop by category">
+function CategoryBubbles(){
+  const {categories}=useCatalog();
+  return <section className="container category-bubbles" aria-label="Shop by category">
     {categories.slice(0,12).map(c=><Link key={c.slug} to={'/category/'+c.slug}><div><img src={c.image} alt={c.name}/></div><span>{c.short}</span></Link>)}
-  </section>
-);
+  </section>;
+}
 
 function HomePage(props){
+  const {products}=useCatalog();
   const topSelling=[...products].sort((a,b)=>b.reviews-a.reviews).slice(0,10);
   const flash=[...products].sort((a,b)=>discount(b)-discount(a)).slice(0,10);
   const phones=products.filter(p=>p.category==='phones-tablets').slice(0,8);
@@ -519,6 +569,7 @@ function ProductCard({product,addToCart,wishlist,toggleWishlist,openProduct}){
 }
 
 function ShopPage(props){
+  const {products,categories}=useCatalog();
   const [params]=useSearchParams();
   const q=(params.get('q')||'').toLowerCase();
   const [cat,setCat]=useState('all');
@@ -529,7 +580,7 @@ function ShopPage(props){
     if(sort==='high')x=[...x].sort((a,b)=>b.price-a.price);
     if(sort==='rating')x=[...x].sort((a,b)=>b.rating-a.rating);
     return x;
-  },[q,cat,sort]);
+  },[products,q,cat,sort]);
   return <main className="container page-shell">
     <Breadcrumb items={[['Home','/'],['Shop']]}/>
     <div className="shop-top"><div><span className="eyebrow">ZAWADIMART MARKETPLACE</span><h1>{q?`Results for “${params.get('q')}”`:'Shop All Products'}</h1><p>{list.length} products</p></div><select value={sort} onChange={e=>setSort(e.target.value)}><option value="featured">Featured</option><option value="low">Price: Low to high</option><option value="high">Price: High to low</option><option value="rating">Highest rated</option></select></div>
@@ -539,17 +590,20 @@ function ShopPage(props){
 }
 
 function CategoryPage(props){
-  const {slug}=useParams(); const cat=getCategory(slug); if(!cat)return <NotFound/>;
+  const {products,getCategory,ready}=useCatalog();
+  const {slug}=useParams(); const cat=getCategory(slug); if(!cat)return ready?<NotFound/>:<main className="container narrow"><div className="loader-ring" aria-label="Loading"><span/></div></main>;
   const items=products.filter(p=>p.category===slug);
   return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Shop','/shop'],[cat.name]]}/><div className="category-banner"><div><span>{cat.icon}</span><h1>{cat.name}</h1><p>Shop curated {cat.name.toLowerCase()} with realistic Kenyan pricing.</p></div><img src={cat.image}/></div><div className="catalog-grid">{items.map(p=><ProductCard key={p.id} product={p} {...props}/>)}</div></main>
 }
 
 function DealsPage(props){
+  const {products}=useCatalog();
   const items=[...products].sort((a,b)=>discount(b)-discount(a));
   return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Deals']]}/><div className="promo-banner"><span>LIMITED-TIME OFFERS</span><h1>Today's Best Deals</h1><p>Save across phones, TVs, appliances, fashion, beauty and more.</p></div><div className="catalog-grid">{items.map(p=><ProductCard key={p.id} product={p} {...props}/>)}</div></main>
 }
 
 function ProductPage({addToCart,wishlist,toggleWishlist}){
+  const {getProduct,getCategory,ready}=useCatalog();
   const {id}=useParams();
   const p=getProduct(id);
   const [qty,setQty]=useState(1);
@@ -604,8 +658,8 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
     };
   },[p?.id]);
 
-  if(!p)return <NotFound/>;
-  const cat=getCategory(p.category);
+  if(!p)return ready?<NotFound/>:<main className="container narrow"><div className="loader-ring" aria-label="Loading"><span/></div></main>;
+  const cat=getCategory(p.category)||{name:'Shop',slug:''};
 
   if(loading){
     return <main className="product-loading-page">
@@ -630,7 +684,7 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
     </main>;
   }
 
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,'/category/'+cat.slug],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p><div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div><div className="detail-actions"><div className="qty"><button onClick={()=>setQty(Math.max(1,qty-1))}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))}><Plus/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)}><Heart fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,cat.slug?'/category/'+cat.slug:'/shop'],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p>{p.stock>0?<div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div>:<div className="in-stock out"><CircleAlert/>Out of stock</div>}<div className="detail-actions"><div className="qty"><button onClick={()=>setQty(Math.max(1,qty-1))}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))}><Plus/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)}><Heart fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
 }
 
 function CartPage({rows,subtotal,setQty,remove}){
@@ -643,16 +697,142 @@ function OrderSummary({subtotal,delivery,checkout=false}){
   return <aside className="summary"><h2>Order Summary</h2><div><span>Subtotal</span><b>{money(subtotal)}</b></div><div><span>Delivery</span><b>{delivery?money(delivery):'FREE'}</b></div><div className="summary-total"><span>Total</span><b>{money(total)}</b></div>{checkout&&<Link to="/checkout">Proceed to Checkout <ChevronRight/></Link>}<div className="summary-payments"><PaymentMarks compact withLabel={false}/></div><p><ShieldCheck/>Secure checkout</p></aside>
 }
 
-function CheckoutPage({rows,subtotal,clearCart}){
-  const nav=useNavigate(); const [method,setMethod]=useState('mpesa'); const [error,setError]=useState(''); const delivery=subtotal>=10000?0:(subtotal?350:0);
-  const submit=(e)=>{e.preventDefault();if(!rows.length)return nav('/cart');const f=new FormData(e.currentTarget);if(!f.get('fullName')||!f.get('phone')||!f.get('address'))return setError('Please complete contact and delivery details.');if(method==='mpesa'&&!/^((\+?254)|0)?7\d{8}$/.test(String(f.get('mpesa')).replace(/\s/g,'')))return setError('Enter a valid Kenyan M-Pesa number.');if(method==='card'&&(!f.get('cardName')||String(f.get('cardNumber')).replace(/\s/g,'').length<13||String(f.get('cvc')).length<3))return setError('Complete the card details correctly.');clearCart();nav('/order-success',{state:{method,total:subtotal+delivery}})};
+function CheckoutPage({rows,subtotal,clearCart,user}){
+  const nav=useNavigate(); const [method,setMethod]=useState('mpesa'); const [error,setError]=useState(''); const [submitting,setSubmitting]=useState(false); const delivery=subtotal>=10000?0:(subtotal?350:0);
+  const submit=async(e)=>{
+    e.preventDefault(); if(submitting)return; if(!rows.length)return nav('/cart');
+    const f=new FormData(e.currentTarget); const field=(name)=>String(f.get(name)||'').trim();
+    if(!field('fullName')||!field('phone')||!field('address'))return setError('Please complete contact and delivery details.');
+    if(method==='mpesa'&&!KENYAN_PHONE.test(field('mpesa').replace(/\s/g,'')))return setError('Enter a valid Kenyan M-Pesa number.');
+    if(method==='card'&&!field('email'))return setError('Enter your email address to pay by card.');
+    setError(''); setSubmitting(true);
+    try{
+      const {order,accessKey,payment}=await api('/orders',{method:'POST',body:{
+        items:rows.map(({product,qty})=>({productId:product.id,quantity:qty})),
+        customer:{fullName:field('fullName'),phone:field('phone'),email:field('email')},
+        delivery:{address:field('address'),county:field('county'),town:field('town')},
+        paymentMethod:method,
+        mpesaPhone:method==='mpesa'?field('mpesa'):undefined,
+      }});
+      clearCart();
+      if(payment.status==='redirect')return window.location.assign(payment.checkoutUrl);
+      nav(`/order-success?order=${order.orderNumber}&key=${accessKey}`,{state:{order,payment}});
+    }catch(err){setError(errorText(err));setSubmitting(false);}
+  };
   if(!rows.length)return <main className="container page-shell"><Empty icon={<ShoppingBag/>} title="No items to checkout"/></main>;
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]}/><div className="checkout-title"><h1>Checkout</h1><ShieldCheck/></div><form className="checkout-layout" onSubmit={submit}><div className="checkout-forms"><section className="form-card"><h2>Delivery Details</h2><div className="form-grid"><label>Full name<input name="fullName" placeholder="e.g. Amina Wanjiku"/></label><label>Phone number<input name="phone" placeholder="0712 345 678"/></label><label className="wide">Email<input name="email" type="email" placeholder="you@example.com"/></label><label className="wide">Delivery address<input name="address" placeholder="Estate, street, building and house number"/></label><label>County<select name="county"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label><label>Town / area<input name="town" placeholder="e.g. Kilimani"/></label></div></section><section className="form-card"><div className="payment-heading-row"><h2>Payment Method</h2><PaymentMarks compact withLabel={false}/></div><div className="payment-tabs"><button type="button" className={method==='mpesa'?'active':''} onClick={()=>setMethod('mpesa')}><PaymentBrand brand="mpesa" compact/><span><b>M-Pesa</b><small>Pay securely from your phone</small></span></button><button type="button" className={method==='card'?'active':''} onClick={()=>setMethod('card')}><span className="tab-card-logos"><PaymentBrand brand="visa" compact/><PaymentBrand brand="mastercard" compact/></span><span><b>Card</b><small>Visa / Mastercard</small></span></button></div>{method==='mpesa'?<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="mpesa"/><span>Gateway-ready checkout</span></div><label>M-Pesa phone number<input name="mpesa" placeholder="0712 345 678"/></label><p>STK Push would be sent after a live payment gateway is connected.</p></div>:<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="visa"/><PaymentBrand brand="mastercard"/><span>Gateway-ready checkout</span></div><div className="form-grid"><label className="wide">Name as it appears on card<input name="cardName" placeholder="CARDHOLDER NAME"/></label><label className="wide">Card number<input name="cardNumber" placeholder="1234 5678 9012 3456"/></label><label>Expiry<input name="expiry" placeholder="MM / YY"/></label><label>CVC<input name="cvc" placeholder="123"/></label></div><p>Card data is not stored by this frontend.</p></div>}</section>{error&&<div className="error">{error}</div>}</div><div><aside className="checkout-items"><h2>Your Order</h2>{rows.map(({product,qty})=><div key={product.id}><img src={product.image}/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price*qty)}</strong></div>)}</aside><OrderSummary subtotal={subtotal} delivery={delivery}/><button className="place-order">Place Order <ChevronRight/></button></div></form></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]}/><div className="checkout-title"><h1>Checkout</h1><ShieldCheck/></div><form className="checkout-layout" onSubmit={submit}><div className="checkout-forms"><section className="form-card"><h2>Delivery Details</h2><div className="form-grid"><label>Full name<input name="fullName" defaultValue={user?.name||''} placeholder="e.g. Amina Wanjiku"/></label><label>Phone number<input name="phone" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label><label className="wide">Email{method==='card'?' (required for card payments)':''}<input name="email" type="email" defaultValue={user?.email||''} placeholder="you@example.com"/></label><label className="wide">Delivery address<input name="address" placeholder="Estate, street, building and house number"/></label><label>County<select name="county"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label><label>Town / area<input name="town" placeholder="e.g. Kilimani"/></label></div></section><section className="form-card"><div className="payment-heading-row"><h2>Payment Method</h2><PaymentMarks compact withLabel={false}/></div><div className="payment-tabs three"><button type="button" className={method==='mpesa'?'active':''} onClick={()=>setMethod('mpesa')}><PaymentBrand brand="mpesa" compact/><span><b>M-Pesa</b><small>Pay securely from your phone</small></span></button><button type="button" className={method==='card'?'active':''} onClick={()=>setMethod('card')}><span className="tab-card-logos"><PaymentBrand brand="visa" compact/><PaymentBrand brand="mastercard" compact/></span><span><b>Card</b><small>Visa / Mastercard</small></span></button><button type="button" className={method==='cod'?'active':''} onClick={()=>setMethod('cod')}><span className="cod-mark"><Banknote/></span><span><b>Cash on Delivery</b><small>Pay when your order arrives</small></span></button></div>{method==='mpesa'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="mpesa"/><span>STK Push</span></div><label>M-Pesa phone number<input name="mpesa" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label><p>After you place your order, an M-Pesa prompt will appear on this phone. Enter your PIN to pay.</p></div>}{method==='card'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="visa"/><PaymentBrand brand="mastercard"/><span>Secure hosted checkout</span></div><p>After you place your order you will be taken to our secure payment partner's page to enter your card details. ZawadiMart never sees or stores your card number.</p></div>}{method==='cod'&&<div className="payment-panel"><p>Pay in cash or M-Pesa to our rider when your order is delivered. Please have the exact amount ready.</p></div>}</section>{error&&<div className="error">{error}</div>}</div><div><aside className="checkout-items"><h2>Your Order</h2>{rows.map(({product,qty})=><div key={product.id}><img src={product.image}/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price*qty)}</strong></div>)}</aside><OrderSummary subtotal={subtotal} delivery={delivery}/><button className="place-order" disabled={submitting}>{submitting?'Placing order…':<>Place Order <ChevronRight/></>}</button></div></form></main>
 }
 
-function OrderSuccess(){const l=useLocation();return <main className="container success"><CircleCheck/><h1>Order received</h1><p>Your demo order was created using {l.state?.method==='mpesa'?'M-Pesa':'card'} checkout.</p><Link to="/shop">Continue Shopping</Link></main>}
-function TrackOrder(){return <main className="container narrow"><Breadcrumb items={[['Home','/'],['Track Order']]}/><h1>Track your order</h1><div className="form-card"><label>Order number<input placeholder="e.g. ZM-381204"/></label><label>Phone or email<input placeholder="Used at checkout"/></label><button className="primary">Track Order</button></div></main>}
-function AccountPage(){return <main className="container narrow"><Breadcrumb items={[['Home','/'],['Account']]}/><div className="account-card"><CircleUserRound/><h1>Welcome back</h1><p>Sign in to manage orders and saved items.</p><label>Email or phone<input placeholder="you@example.com"/></label><label>Password<input type="password" placeholder="••••••••"/></label><button className="primary">Sign in</button></div></main>}
+const STATUS_LABELS={pending_payment:'Awaiting payment',confirmed:'Confirmed',processing:'Processing',shipped:'On the way',delivered:'Delivered',cancelled:'Cancelled',payment_failed:'Payment not completed'};
+const PAYMENT_LABELS={mpesa:'M-Pesa',card:'Card',cod:'Cash on delivery'};
+const PAYMENT_STATUS_LABELS={unpaid:'Unpaid',pending:'Awaiting confirmation',paid:'Paid',failed:'Not completed',refunded:'Refunded'};
+const formatDate=(value)=>new Date(value).toLocaleString('en-KE',{dateStyle:'medium',timeStyle:'short'});
+
+function OrderDetails({order}){
+  return <section className="form-card order-details">
+    <div className="order-head"><div><span className="eyebrow">ORDER</span><h2>{order.orderNumber}</h2><small>Placed {formatDate(order.createdAt)}</small></div><span className={`status-pill ${order.status}`}>{STATUS_LABELS[order.status]}</span></div>
+    <div className="order-lines">{order.items.map((item,i)=><div key={i}><img src={item.image} alt=""/><span><b>{item.name}</b><small>Qty {item.quantity} × {money(item.unitPrice)}</small></span><strong>{money(item.lineTotal)}</strong></div>)}</div>
+    <div className="order-totals"><div><span>Subtotal</span><b>{money(order.subtotal)}</b></div><div><span>Delivery</span><b>{order.deliveryFee?money(order.deliveryFee):'FREE'}</b></div><div className="summary-total"><span>Total</span><b>{money(order.total)}</b></div><div><span>Payment</span><b>{PAYMENT_LABELS[order.paymentMethod]} · {PAYMENT_STATUS_LABELS[order.paymentStatus]}</b></div></div>
+    <ol className="order-timeline">{order.events.map((event,i)=><li key={i}><b>{STATUS_LABELS[event.status]||event.status}</b><span>{event.note}</span><small>{formatDate(event.createdAt)}</small></li>)}</ol>
+  </section>;
+}
+
+function OrderStatusPage(){
+  const {orderNumber:param}=useParams(); const [params]=useSearchParams(); const location=useLocation();
+  const number=param||params.get('order')||''; const key=params.get('key')||'';
+  const [order,setOrder]=useState(location.state?.order||null);
+  const [notice,setNotice]=useState(location.state?.payment?.message||'');
+  const [error,setError]=useState(''); const [paymentError,setPaymentError]=useState(''); const [busy,setBusy]=useState(false);
+  const path='/orders/'+encodeURIComponent(number); const headers=key?{'X-Order-Key':key}:{};
+
+  // Asks the API for the latest payment state (it checks with M-Pesa / Paystack if needed).
+  const refresh=async()=>{
+    const status=await api(path+'/payment-status',{headers});
+    setPaymentError(status.lastError||'');
+    setOrder((await api(path,{headers})).order);
+    return status;
+  };
+
+  useEffect(()=>{
+    if(!number)return;
+    api(path,{headers}).then((r)=>{setOrder(r.order); if(r.order.paymentStatus==='failed') refresh().catch(()=>{});}).catch((e)=>setError(errorText(e)));
+  },[number,key]);
+
+  const awaiting=order?.status==='pending_payment'&&order?.paymentStatus==='pending';
+  useEffect(()=>{
+    if(!awaiting)return;
+    let attempts=0;
+    const tick=()=>{attempts+=1; refresh().catch(()=>{}); if(attempts>=45)clearInterval(timer);};
+    const timer=setInterval(tick,4000); tick();
+    return ()=>clearInterval(timer);
+  },[awaiting,number,key]);
+
+  const retry=async(paymentMethod)=>{
+    setBusy(true); setPaymentError('');
+    try{
+      const r=await api(path+'/pay',{method:'POST',headers,body:{paymentMethod}});
+      if(r.payment.status==='redirect')return window.location.assign(r.payment.checkoutUrl);
+      setOrder(r.order); setNotice(r.payment.message);
+      if(r.payment.status==='failed')setPaymentError(r.payment.message);
+    }catch(e){setPaymentError(errorText(e));}
+    setBusy(false);
+  };
+
+  if(!number)return <main className="container narrow"><Empty icon={<PackageCheck/>} title="No order selected"/></main>;
+  if(!order)return <main className="container narrow">{error?<><div className="error">{error}</div><p><Link className="primary" to="/track-order">Track an order</Link></p></>:<div className="loader-ring" aria-label="Loading order"><span/></div>}</main>;
+
+  const failed=order.status==='pending_payment'&&order.paymentStatus==='failed';
+  const hero=order.status==='cancelled'?{tone:'cancelled',icon:<X/>,title:'Order cancelled',text:'This order has been cancelled. Any reserved items have been released.'}
+    :failed?{tone:'failed',icon:<CircleAlert/>,title:'Payment not completed',text:paymentError||'Your payment did not go through. You can try again below.'}
+    :awaiting?{tone:'pending',icon:<Clock3/>,title:order.paymentMethod==='mpesa'?'Check your phone':'Confirming your payment',text:notice||(order.paymentMethod==='mpesa'?'Enter your M-Pesa PIN on the prompt sent to your phone. This page updates automatically.':'We are confirming your card payment. This page updates automatically.')}
+    :order.status==='pending_payment'?{tone:'pending',icon:<Clock3/>,title:'Awaiting payment',text:'Complete payment to confirm your order.'}
+    :{tone:'confirmed',icon:<CircleCheck/>,title:order.paymentMethod==='cod'&&order.paymentStatus!=='paid'?'Order confirmed':'Thank you for your order',text:order.paymentMethod==='cod'&&order.paymentStatus!=='paid'?`Please have ${money(order.total)} ready when your order is delivered.`:'Your payment has been received and your order is confirmed.'};
+
+  return <main className="container narrow order-page">
+    <div className={`order-hero ${hero.tone}`}>{hero.icon}<h1>{hero.title}</h1><p>{hero.text}</p>
+      {awaiting&&<div className="loader-ring" aria-hidden="true"><span/></div>}
+      {(failed||(order.status==='pending_payment'&&!awaiting))&&<div className="order-actions">
+        <button className="primary" disabled={busy} onClick={()=>retry('mpesa')}>{busy?'Please wait…':'Send M-Pesa prompt again'}</button>
+        {order.customer?.email&&<button className="secondary" disabled={busy} onClick={()=>retry('card')}>Pay by card instead</button>}
+      </div>}
+    </div>
+    <OrderDetails order={order}/>
+    <p className="order-footnote">Keep your order number <b>{order.orderNumber}</b> to track this order. <Link to="/shop">Continue shopping</Link></p>
+  </main>;
+}
+
+function TrackOrder(){
+  const [order,setOrder]=useState(null); const [error,setError]=useState(''); const [busy,setBusy]=useState(false);
+  const submit=async(e)=>{
+    e.preventDefault(); const f=new FormData(e.currentTarget);
+    setBusy(true); setError('');
+    try{ setOrder((await api('/orders/track',{method:'POST',body:{orderNumber:String(f.get('orderNumber')).trim(),contact:String(f.get('contact')).trim()}})).order); }
+    catch(err){ setOrder(null); setError(errorText(err)); }
+    setBusy(false);
+  };
+  return <main className="container narrow"><Breadcrumb items={[['Home','/'],['Track Order']]}/><h1>Track your order</h1><form className="form-card" onSubmit={submit}><label>Order number<input name="orderNumber" placeholder="e.g. ZM-381204" required/></label><label>Phone or email<input name="contact" placeholder="Used at checkout" required/></label><button className="primary" disabled={busy}>{busy?'Checking…':'Track Order'}</button></form>{error&&<div className="error track-error">{error}</div>}{order&&<OrderDetails order={order}/>}</main>
+}
+
+function AccountPage({user,signIn,signOut}){
+  const [mode,setMode]=useState('signin'); const [error,setError]=useState(''); const [busy,setBusy]=useState(false); const [orders,setOrders]=useState(null);
+  useEffect(()=>{ if(user) api('/orders').then((r)=>setOrders(r.items)).catch(()=>setOrders([])); },[user?.id]);
+
+  const submit=async(e)=>{
+    e.preventDefault(); const f=Object.fromEntries(new FormData(e.currentTarget));
+    setBusy(true); setError('');
+    try{
+      const body=mode==='signin'?{identifier:f.identifier,password:f.password}:{name:f.name,email:f.email,phone:f.phone,password:f.password};
+      const {token,user:account}=await api(mode==='signin'?'/auth/login':'/auth/register',{method:'POST',body});
+      signIn({token,user:account});
+    }catch(err){setError(errorText(err));}
+    setBusy(false);
+  };
+
+  if(user)return <main className="container narrow"><Breadcrumb items={[['Home','/'],['Account']]}/><div className="account-card"><div className="account-profile"><span><h1>Hi, {user.name.split(' ')[0]}</h1><p>{user.email}{user.phone?` · 0${user.phone.slice(3)}`:''}</p></span><button onClick={signOut}><LogOut/>Sign out</button></div></div>
+    <section className="form-card account-section"><h2>My orders</h2>{orders===null?<p>Loading your orders…</p>:!orders.length?<p>You have not placed any orders yet. <Link to="/shop">Start shopping</Link></p>:<div className="account-orders">{orders.map((o)=><Link key={o.orderNumber} to={'/orders/'+o.orderNumber}><span><b>{o.orderNumber}</b><small>{formatDate(o.createdAt)} · {o.itemCount} item{o.itemCount===1?'':'s'} · {money(o.total)}</small></span><span className={`status-pill ${o.status}`}>{STATUS_LABELS[o.status]}</span></Link>)}</div>}</section></main>;
+
+  return <main className="container narrow"><Breadcrumb items={[['Home','/'],['Account']]}/><form className="account-card" onSubmit={submit}><CircleUserRound/>{mode==='signin'?<><h1>Welcome back</h1><p>Sign in to manage orders and saved items.</p><label>Email or phone<input name="identifier" placeholder="you@example.com" autoComplete="username" required/></label></>:<><h1>Create your account</h1><p>Save your cart and wishlist, and follow your orders.</p><label>Full name<input name="name" placeholder="e.g. Amina Wanjiku" autoComplete="name" required/></label><label>Email<input name="email" type="email" placeholder="you@example.com" autoComplete="email" required/></label><label>Phone (optional)<input name="phone" placeholder="0712 345 678" autoComplete="tel"/></label></>}<label>Password<input name="password" type="password" placeholder="••••••••" autoComplete={mode==='signin'?'current-password':'new-password'} minLength={mode==='signin'?undefined:8} required/></label>{error&&<div className="error">{error}</div>}<button className="primary" disabled={busy}>{busy?'Please wait…':mode==='signin'?'Sign in':'Create account'}</button><p className="account-switch">{mode==='signin'?'New to ZawadiMart? ':'Already have an account? '}<button type="button" onClick={()=>{setMode(mode==='signin'?'register':'signin');setError('');}}>{mode==='signin'?'Create an account':'Sign in'}</button></p></form></main>;
+}
 function Empty({icon,title}){return <div className="empty">{icon}<h2>{title}</h2><p>Explore the store and find something you like.</p><Link to="/shop">Start Shopping</Link></div>}
 function Breadcrumb({items}){return <nav className="breadcrumb">{items.map(([label,href],i)=><span key={label}>{i>0&&<ChevronRight size={12}/>} {href?<Link to={href}>{label}</Link>:<b>{label}</b>}</span>)}</nav>}
 function NotFound(){return <main className="container narrow"><Empty icon={<span className="big404">404</span>} title="Page not found"/></main>}
@@ -665,13 +845,13 @@ function Footer(){return <footer>
     <div><BrandLogo compact/><p>Modern online shopping for Kenya.</p></div>
     <div><h4>HELP</h4><Link to="/track-order">Track Order</Link><Link to="/account">My Account</Link><span>Shipping & Delivery</span><span>Returns</span></div>
     <div><h4>ABOUT</h4><Link to="/shop">Shop</Link><Link to="/deals">Deals</Link><span>Terms & Conditions</span><span>Privacy Notice</span></div>
-    <div><h4>PAYMENTS</h4><span>M-PESA checkout</span><span>Visa checkout</span><span>Mastercard checkout</span><span>Live processing requires configured merchant gateway</span></div>
+    <div><h4>PAYMENTS</h4><span>M-PESA checkout</span><span>Visa checkout</span><span>Mastercard checkout</span><span>Cash on delivery</span></div>
   </div>
   <div className="container footer-payment-panel">
     <div className="footer-payment-copy"><strong>Secure payment methods</strong><span>Pay using M-PESA, Visa or Mastercard at checkout.</span></div>
     <PaymentMarks withLabel={false}/>
   </div>
-  <div className="footer-bottom">© 2026 ZawadiMart. Frontend demonstration.</div>
+  <div className="footer-bottom">© 2026 ZawadiMart.</div>
 </footer>}
 
 function MobileNav({cartCount}){return <nav className="mobile-nav"><NavLink to="/"><Home/><span>Home</span></NavLink><NavLink to="/shop"><LayoutGrid/><span>Shop</span></NavLink><NavLink to="/deals"><Tag/><span>Deals</span></NavLink><NavLink to="/cart" className="mobile-cart"><ShoppingCart/><span>Cart</span>{cartCount>0&&<i>{cartCount}</i>}</NavLink><NavLink to="/account"><CircleUserRound/><span>Account</span></NavLink></nav>}

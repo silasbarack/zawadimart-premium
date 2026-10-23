@@ -1,11 +1,68 @@
 services:
+  # Storefront (React + Vite static site)
   - type: web
     name: zawadimart-premium
     runtime: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     autoDeploy: true
+    envVars:
+      # Public URL of the API service below, e.g. https://zawadimart-api.onrender.com
+      - key: VITE_API_URL
+        sync: false
     routes:
       - type: rewrite
         source: /*
         destination: /index.html
+
+  # REST API (server/)
+  - type: web
+    name: zawadimart-api
+    runtime: node
+    plan: free
+    buildCommand: cd server && npm ci
+    # Applies pending migrations and seeds the catalogue (existing rows are kept) before starting.
+    startCommand: cd server && npm run start:prod
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: zawadimart-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MPESA_CALLBACK_SECRET
+        generateValue: true
+      # Storefront origin(s), e.g. https://zawadimart-premium.onrender.com
+      - key: CORS_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      # This service's own public URL; M-Pesa callbacks are sent here.
+      - key: PUBLIC_API_URL
+        sync: false
+      - key: MPESA_ENV
+        value: sandbox
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_SHORTCODE
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: zawadimart-db
+    plan: free
+    databaseName: zawadimart
+    user: zawadimart
