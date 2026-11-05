@@ -32,6 +32,10 @@ export const config = {
   paymentTimeoutMinutes: int(env.PAYMENT_TIMEOUT_MINUTES, 30),
   rateLimit: env.RATE_LIMIT !== 'off',
   paymentSimulation: bool(env.PAYMENT_SIMULATION) && !isProduction,
+  // Test mode for M-Pesa that also works in production: no prompt is sent and no
+  // money moves; payments confirm themselves after a few seconds. Real Daraja keys
+  // take priority, so adding them switches M-Pesa to live even if this stays on.
+  mpesaMock: bool(env.MPESA_MOCK),
   mpesa: {
     env: env.MPESA_ENV === 'production' ? 'production' : 'sandbox',
     consumerKey: env.MPESA_CONSUMER_KEY || '',
@@ -70,6 +74,7 @@ export function configWarnings() {
   const warnings = [];
   if (!config.publicApiUrl.startsWith('https://')) warnings.push('PUBLIC_API_URL should be this API\'s https URL, otherwise M-Pesa callbacks cannot reach it.');
   if (config.corsOrigins.every((origin) => origin.includes('localhost') || origin.includes('127.0.0.1'))) warnings.push('CORS_ORIGINS only lists localhost, so the live storefront cannot call the API.');
+  if (config.mpesaMock && !(config.mpesa.consumerKey && config.mpesa.passkey)) warnings.push('MPESA_MOCK is on: M-Pesa orders are marked paid without any money being charged.');
   if (config.frontendUrl.includes('localhost')) warnings.push('FRONTEND_URL points at localhost, so card payments will redirect customers to the wrong site.');
   return warnings;
 }

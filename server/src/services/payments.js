@@ -7,16 +7,27 @@ import { mpesaConfigured, parseStkCallback, stkPush, stkQuery } from './mpesa.js
 import { addEvent, lockOrder } from './orders.js';
 import { initializeTransaction, paystackConfigured, verifyTransaction } from './paystack.js';
 
-const PROVIDER_LABEL = { mpesa: 'M-Pesa', paystack: 'card', simulation: 'simulated' };
+const PROVIDER_LABEL = { mpesa: 'M-Pesa', paystack: 'card', simulation: 'test payment' };
+const MOCK_CONFIRM_SECONDS = 5;
+
+// 'live' (real gateway), 'mock' (test mode, no money moves) or 'off' per method.
+export function paymentModes() {
+  const mode = (live, mock) => (config.paymentSimulation ? 'mock' : live ? 'live' : mock ? 'mock' : 'off');
+  const mpesa = mode(mpesaConfigured(), config.mpesaMock);
+  const card = mode(paystackConfigured(), false);
+  return {
+    mpesa: { available: mpesa !== 'off', mode: mpesa },
+    card: { available: card !== 'off', mode: card },
+    cod: { available: true, mode: 'live' },
+  };
+}
+
+const testReceipt = () => `TEST${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
 export function ensureGatewayAvailable(method) {
-  if (method === 'cod' || config.paymentSimulation) return;
-  if (method === 'mpesa' && !mpesaConfigured()) {
-    throw new AppError(503, 'M-Pesa payments are temporarily unavailable. Please choose another payment method.');
-  }
-  if (method === 'card' && !paystackConfigured()) {
-    throw new AppError(503, 'Card payments are temporarily unavailable. Please choose another payment method.');
-  }
+  if (method === 'cod' || paymentModes()[method].available) return;
+  const name = method === 'mpesa' ? 'M-Pesa' : 'Card';
+  throw new AppError(503, `${name} payments are temporarily unavailable. Please choose another payment method.`);
 }
 
 const insertPayment = async (order, provider, { phone = null, reference = null } = {}) => {
@@ -44,8 +55,18 @@ export async function startPayment(order, { mpesaPhone } = {}) {
 
   if (config.paymentSimulation) {
     const payment = await insertPayment(order, 'simulation', { phone: mpesaPhone, reference: `SIM-${crypto.randomUUID()}` });
-    await applyPaymentResult(payment.id, { success: true, receipt: `SIM${Date.now().toString(36).toUpperCase()}`, amount: order.total });
+    await applyPaymentResult(payment.id, { success: true, receipt: testReceipt(), amount: order.total });
     return { method, status: 'paid', message: 'Payment simulated (development mode).' };
+  }
+
+  if (method === 'mpesa' && paymentModes().mpesa.mode === 'mock') {
+    await insertPayment(order, 'simulation', { phone: mpesaPhone, reference: `SIM-${crypto.randomUUID()}` });
+    await query(`UPDATE orders SET payment_status = 'pending', updated_at = now() WHERE id = $1 AND payment_status <> 'paid'`, [order.id]);
+    return {
+      method,
+      status: 'pending',
+      message: 'Test mode: no M-Pesa prompt is sent and no money is charged. Your payment will be confirmed automatically in a few seconds.',
+    };
   }
 
   if (method === 'mpesa') {
@@ -146,9 +167,12 @@ export async function applyPaymentResult(paymentId, { success, reason, receipt, 
        WHERE id = $1`,
       [order.id],
     );
+    const receivedNote = payment.provider === 'simulation'
+      ? `Test payment confirmed${receiptNote}. No money was charged.`
+      : `Payment received via ${label}${receiptNote}.`;
     await addEvent(client, order.id, order.status === 'cancelled' ? 'cancelled' : 'confirmed', order.status === 'cancelled'
       ? `${label} payment received${receiptNote} after the order was cancelled. Refund or reinstate it.`
-      : `Payment received via ${label}${receiptNote}.`);
+      : receivedNote);
   });
 }
 
@@ -183,13 +207,20 @@ export async function handlePaystackEvent(event) {
 // missed or cannot reach the API, e.g. in local development).
 export async function refreshPendingPayments(order, { force = false } = {}) {
   const { rows } = await query(
-    `SELECT * FROM payments
-     WHERE order_id = $1 AND status = 'pending' AND reference IS NOT NULL AND provider IN ('mpesa', 'paystack')
-       AND ($2 OR last_checked_at IS NULL OR last_checked_at < now() - interval '10 seconds')
+    `SELECT *, EXTRACT(EPOCH FROM now() - created_at) AS age_seconds FROM payments
+     WHERE order_id = $1 AND status = 'pending' AND reference IS NOT NULL AND provider IN ('mpesa', 'paystack', 'simulation')
+       AND ($2 OR provider = 'simulation' OR last_checked_at IS NULL OR last_checked_at < now() - interval '10 seconds')
      ORDER BY created_at DESC LIMIT 3`,
     [order.id, force],
   );
   for (const payment of rows) {
+    // M-Pesa test mode: confirm once a customer would have had time to enter their PIN.
+    if (payment.provider === 'simulation') {
+      if (payment.age_seconds >= MOCK_CONFIRM_SECONDS) {
+        await applyPaymentResult(payment.id, { success: true, receipt: testReceipt(), amount: payment.amount });
+      }
+      continue;
+    }
     await query('UPDATE payments SET last_checked_at = now() WHERE id = $1', [payment.id]);
     let result;
     try {

@@ -1,18 +1,16 @@
 import { assertProductionConfig, config, configWarnings } from './config.js';
 import { createApp } from './app.js';
 import { pool } from './db/pool.js';
-import { mpesaConfigured } from './services/mpesa.js';
-import { paystackConfigured } from './services/paystack.js';
+import { paymentModes } from './services/payments.js';
 import { startBackgroundJobs } from './services/jobs.js';
 
 assertProductionConfig();
 
 const server = createApp().listen(config.port, () => {
   console.log(`ZawadiMart API listening on port ${config.port} (${config.nodeEnv})`);
-  const gateway = (name, ready) => `${name}: ${ready ? 'configured' : 'not configured'}`;
-  console.log(config.paymentSimulation
-    ? 'Payments: SIMULATION mode (development only)'
-    : `Payments: ${gateway('M-Pesa', mpesaConfigured())}, ${gateway('Paystack cards', paystackConfigured())}, cash on delivery: enabled`);
+  const modes = paymentModes();
+  const label = { live: 'live', mock: 'TEST MODE (no money charged)', off: 'not configured' };
+  console.log(`Payments: M-Pesa: ${label[modes.mpesa.mode]}, cards: ${label[modes.card.mode]}, cash on delivery: enabled`);
   configWarnings().forEach((warning) => console.warn(`WARNING: ${warning}`));
 });
 
