@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { config } from '../config.js';
 import { pool } from './pool.js';
 
 const migrationsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrations');
@@ -10,6 +11,7 @@ export async function migrate({ log = console.log } = {}) {
   try {
     // Serialise concurrent deploys running migrations at the same time.
     await client.query('SELECT pg_advisory_lock(727274)');
+    if (config.databaseSchema !== 'public') await client.query(`CREATE SCHEMA IF NOT EXISTS ${config.databaseSchema}`);
     await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
       name TEXT PRIMARY KEY,
       applied_at TIMESTAMPTZ NOT NULL DEFAULT now()

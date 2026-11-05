@@ -8,6 +8,8 @@ pg.types.setTypeParser(pg.types.builtins.NUMERIC, (value) => Number(value));
 export const pool = new pg.Pool({
   connectionString: config.databaseUrl,
   ssl: config.databaseSsl ? { rejectUnauthorized: false } : undefined,
+  // Unqualified table names resolve to (and are created in) this schema only.
+  options: config.databaseSchema === 'public' ? undefined : `-c search_path=${config.databaseSchema}`,
   max: 10,
 });
 

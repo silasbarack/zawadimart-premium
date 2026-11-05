@@ -18,6 +18,9 @@ export const config = {
   port: int(env.PORT, 4000),
   databaseUrl: env.DATABASE_URL || 'postgres://zawadi:zawadi@localhost:5432/zawadimart',
   databaseSsl: bool(env.DATABASE_SSL),
+  // Postgres schema for all ZawadiMart tables. Use a dedicated one (e.g. zawadimart)
+  // when sharing a database with another app.
+  databaseSchema: env.DATABASE_SCHEMA || 'public',
   jwtSecret: env.JWT_SECRET || (isProduction ? '' : 'dev-only-insecure-secret'),
   jwtExpiresIn: env.JWT_EXPIRES_IN || '7d',
   bcryptRounds: int(env.BCRYPT_ROUNDS, 12),
@@ -48,6 +51,10 @@ export const config = {
     password: env.ADMIN_PASSWORD || '',
   },
 };
+
+if (!/^[a-z_][a-z0-9_]*$/.test(config.databaseSchema)) {
+  throw new Error('DATABASE_SCHEMA may only contain lowercase letters, digits and underscores');
+}
 
 export function assertProductionConfig() {
   if (!config.isProduction) return;

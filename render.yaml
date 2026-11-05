@@ -20,6 +20,8 @@ services:
     name: zawadimart-api
     runtime: node
     plan: free
+    # Same region as ticketflow-db so the API can use its internal connection URL.
+    region: oregon
     buildCommand: cd server && npm ci
     # Applies pending migrations and seeds the catalogue (existing rows are kept) before starting.
     startCommand: cd server && npm run start:prod
@@ -28,10 +30,12 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Shares the ticketflow-db Postgres instance: paste its Internal Database URL.
       - key: DATABASE_URL
-        fromDatabase:
-          name: zawadimart-db
-          property: connectionString
+        sync: false
+      # Keeps ZawadiMart's tables apart from TicketFlow's (which use the public schema).
+      - key: DATABASE_SCHEMA
+        value: zawadimart
       - key: JWT_SECRET
         generateValue: true
       - key: MPESA_CALLBACK_SECRET
@@ -60,9 +64,3 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-
-databases:
-  - name: zawadimart-db
-    plan: free
-    databaseName: zawadimart
-    user: zawadimart
