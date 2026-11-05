@@ -48,6 +48,7 @@ Every setting is listed in [`.env.example`](.env.example). The ones that matter 
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | Postgres connection string. Set `DATABASE_SSL=true` for external connections that need TLS. |
+| `DATABASE_SCHEMA` | Postgres schema for ZawadiMart's tables (default `public`). Set a dedicated one, such as `zawadimart`, when the database is shared with another app. Migrations create it if needed. |
 | `JWT_SECRET` | 32+ random characters. The API refuses to start in production without it. |
 | `CORS_ORIGINS` | Comma-separated storefront origins, e.g. `https://zawadimart-premium.onrender.com` |
 | `FRONTEND_URL` | Storefront URL. Paystack sends customers back here. |
@@ -60,15 +61,15 @@ If a payment method isn't configured, an order using it is rejected with a 503 b
 
 ## Deploying on Render
 
-`../render.yaml` defines three resources: the static storefront, this API (`zawadimart-api`) and a Postgres database (`zawadimart-db`). On start, the API applies pending migrations and seeds the catalogue. Seeding never overwrites existing rows, so admin edits survive redeploys.
+`../render.yaml` defines two services: the static storefront and this API (`zawadimart-api`). The API shares the existing `ticketflow-db` Postgres instance. Its tables live in the `zawadimart` schema (`DATABASE_SCHEMA`), apart from TicketFlow's tables in `public`, which have the same names (`users`, `orders`, `payments`). On start, the API applies pending migrations and seeds the catalogue. Seeding never overwrites existing rows, so admin edits survive redeploys.
 
 After the first deploy:
 
-1. Set the API's `PUBLIC_API_URL`, `CORS_ORIGINS` and `FRONTEND_URL`, plus the M-Pesa and Paystack keys.
+1. Set the API's `DATABASE_URL` to `ticketflow-db`'s **Internal Database URL**, plus `PUBLIC_API_URL`, `CORS_ORIGINS`, `FRONTEND_URL` and the M-Pesa and Paystack keys.
 2. Set the storefront's `VITE_API_URL` to the API URL, then redeploy the storefront. Vite bakes this value in at build time.
 3. Set `ADMIN_EMAIL` and `ADMIN_PASSWORD`, or run `npm run create-admin` from the Render shell.
 
-The blueprint uses Render's **free** plans. These are fine for trying the store out, but free web services sleep when idle, and free databases expire after a limited period. Upgrade both before taking real orders.
+The API uses Render's **free** web plan. That's fine for trying the store out, but free services sleep when idle, so the first request after a quiet spell is slow. Upgrade it before taking real orders.
 
 ## API reference
 

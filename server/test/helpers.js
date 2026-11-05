@@ -2,6 +2,7 @@
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgres://zawadi:zawadi@localhost:5432/zawadimart_test';
 process.env.DATABASE_SSL = 'false';
+process.env.DATABASE_SCHEMA = process.env.TEST_DATABASE_SCHEMA || 'public';
 process.env.BCRYPT_ROUNDS = '4';
 process.env.RATE_LIMIT = 'off';
 process.env.JWT_SECRET = 'test-secret';
@@ -22,7 +23,10 @@ export const app = createApp();
 export const api = () => request(app);
 
 export async function resetDatabase() {
-  await pool.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
+  // Only ever drops the schema the API is configured to use.
+  await pool.query(config.databaseSchema === 'public'
+    ? 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+    : `DROP SCHEMA IF EXISTS ${config.databaseSchema} CASCADE;`);
   await migrate({ log: () => {} });
   await seed({ log: () => {} });
 }
