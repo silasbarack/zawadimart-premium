@@ -6,7 +6,7 @@ import { requireAdmin } from '../middleware/auth.js';
 import { adminProductOut, categoryOut, orderSummaryOut, userOut } from '../serializers.js';
 import { expireStaleOrders } from '../services/jobs.js';
 import { addEvent, cancelOrder, findOrder, lockOrder, orderDetails } from '../services/orders.js';
-import { id, optional } from '../validation.js';
+import { clearable, id, optional } from '../validation.js';
 import { listProducts, productListQuery } from './catalog.js';
 
 const router = Router();
@@ -58,12 +58,12 @@ const productFields = {
   name: z.string().trim().min(2).max(200),
   category: z.string().trim().min(1).max(60),
   price: z.coerce.number().int().min(0),
-  oldPrice: optional(z.coerce.number().int().min(0)).nullable(),
+  oldPrice: clearable(z.coerce.number().int().min(0)),
   rating: z.coerce.number().min(0).max(5),
   reviews: z.coerce.number().int().min(0),
   stock: z.coerce.number().int().min(0),
-  badge: optional(z.string().trim().max(40)).nullable(),
-  image: optional(z.url().max(1000)).nullable(),
+  badge: clearable(z.string().trim().max(40)),
+  image: clearable(z.url().max(1000)),
   description: z.string().trim().max(5000),
   isActive: z.boolean(),
 };
@@ -137,8 +137,8 @@ router.delete('/products/:id', async (req, res) => {
 const categoryFields = {
   name: z.string().trim().min(2).max(80),
   short: z.string().trim().min(1).max(40),
-  icon: optional(z.string().trim().max(16)).nullable(),
-  image: optional(z.url().max(1000)).nullable(),
+  icon: clearable(z.string().trim().max(16)),
+  image: clearable(z.url().max(1000)),
   sortOrder: z.coerce.number().int(),
 };
 const categoryColumns = { slug: 'slug', name: 'name', short: 'short_name', icon: 'icon', image: 'image_url', sortOrder: 'sort_order' };

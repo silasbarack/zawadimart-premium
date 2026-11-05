@@ -31,6 +31,16 @@ describe('admin', () => {
     assert.equal(updated.body.price, 4500);
     assert.equal(updated.body.badge, null);
 
+    // Optional fields can be cleared (null or ''), and omitted fields are left alone.
+    const cleared = await api().patch('/api/admin/products/1').set(auth).send({ oldPrice: null, badge: '', image: null }).expect(200);
+    assert.equal(cleared.body.oldPrice, null);
+    assert.equal(cleared.body.badge, null);
+    assert.equal(cleared.body.image, null);
+    assert.equal(cleared.body.price, 18499);
+    const untouched = await api().patch('/api/admin/products/1').set(auth).send({ stock: 5 }).expect(200);
+    assert.equal(untouched.body.oldPrice, null);
+    assert.equal(untouched.body.name, 'Samsung Galaxy A16 128GB 4GB RAM');
+
     await api().delete(`/api/admin/products/${created.body.id}`).set(auth).expect(204);
     await api().get(`/api/products/${created.body.id}`).expect(404);
     const archived = await api().get('/api/admin/products?includeInactive=true&q=SpacePods').set(auth).expect(200);

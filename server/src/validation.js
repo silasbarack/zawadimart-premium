@@ -17,6 +17,9 @@ export const email = z.string().trim().toLowerCase().pipe(z.email('Enter a valid
 // Treats '' and null like a missing value, which is what HTML forms send.
 export const optional = (schema) => z.preprocess((value) => (value === '' || value === null ? undefined : value), schema.optional());
 
+// For fields that can be cleared: '' and null mean "clear it" (null); a missing key leaves it alone.
+export const clearable = (schema) => z.preprocess((value) => (value === '' ? null : value), schema.nullable().optional());
+
 export const cartItems = z.array(z.object({
   productId: id,
   quantity: z.coerce.number().int().min(1).max(100),

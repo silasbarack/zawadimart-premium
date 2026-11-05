@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   Banknote, ChevronLeft, ChevronRight, CircleAlert, CircleCheck, CircleUserRound, Clock3, Heart, Home,
   LayoutGrid, LogOut, Menu, Minus, PackageCheck, Plus, Search, ShieldCheck,
@@ -10,6 +10,9 @@ import {
 import { money, products } from './data';
 import { api, errorText, loadSession, saveSession } from './api';
 import { useCatalog } from './catalog';
+
+// Loaded only when an admin opens /admin, so shoppers never download it.
+const AdminPage = lazy(() => import('./admin'));
 import mpesaLogo from './assets/payments/mpesa.svg';
 import visaLogo from './assets/payments/visa.svg';
 import mastercardLogo from './assets/payments/mastercard.svg';
@@ -250,6 +253,7 @@ function App() {
         <Route path="/orders/:orderNumber" element={<OrderStatusPage/>}/>
         <Route path="/track-order" element={<TrackOrder/>}/>
         <Route path="/account" element={<AccountPage user={session?.user} signIn={signIn} signOut={signOut}/>}/>
+        <Route path="/admin" element={<Suspense fallback={<main className="container narrow"><div className="loader-ring" aria-label="Loading"><span/></div></main>}><AdminPage user={session?.user}/></Suspense>}/>
         <Route path="*" element={<NotFound/>}/>
       </Routes>
       <Footer/>
@@ -723,12 +727,12 @@ function CheckoutPage({rows,subtotal,clearCart,user}){
   return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]}/><div className="checkout-title"><h1>Checkout</h1><ShieldCheck/></div><form className="checkout-layout" onSubmit={submit}><div className="checkout-forms"><section className="form-card"><h2>Delivery Details</h2><div className="form-grid"><label>Full name<input name="fullName" defaultValue={user?.name||''} placeholder="e.g. Amina Wanjiku"/></label><label>Phone number<input name="phone" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label><label className="wide">Email{method==='card'?' (required for card payments)':''}<input name="email" type="email" defaultValue={user?.email||''} placeholder="you@example.com"/></label><label className="wide">Delivery address<input name="address" placeholder="Estate, street, building and house number"/></label><label>County<select name="county"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label><label>Town / area<input name="town" placeholder="e.g. Kilimani"/></label></div></section><section className="form-card"><div className="payment-heading-row"><h2>Payment Method</h2><PaymentMarks compact withLabel={false}/></div><div className="payment-tabs three"><button type="button" className={method==='mpesa'?'active':''} onClick={()=>setMethod('mpesa')}><PaymentBrand brand="mpesa" compact/><span><b>M-Pesa</b><small>Pay securely from your phone</small></span></button><button type="button" className={method==='card'?'active':''} onClick={()=>setMethod('card')}><span className="tab-card-logos"><PaymentBrand brand="visa" compact/><PaymentBrand brand="mastercard" compact/></span><span><b>Card</b><small>Visa / Mastercard</small></span></button><button type="button" className={method==='cod'?'active':''} onClick={()=>setMethod('cod')}><span className="cod-mark"><Banknote/></span><span><b>Cash on Delivery</b><small>Pay when your order arrives</small></span></button></div>{method==='mpesa'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="mpesa"/><span>STK Push</span></div><label>M-Pesa phone number<input name="mpesa" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label><p>After you place your order, an M-Pesa prompt will appear on this phone. Enter your PIN to pay.</p></div>}{method==='card'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="visa"/><PaymentBrand brand="mastercard"/><span>Secure hosted checkout</span></div><p>After you place your order you will be taken to our secure payment partner's page to enter your card details. ZawadiMart never sees or stores your card number.</p></div>}{method==='cod'&&<div className="payment-panel"><p>Pay in cash or M-Pesa to our rider when your order is delivered. Please have the exact amount ready.</p></div>}</section>{error&&<div className="error">{error}</div>}</div><div><aside className="checkout-items"><h2>Your Order</h2>{rows.map(({product,qty})=><div key={product.id}><img src={product.image}/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price*qty)}</strong></div>)}</aside><OrderSummary subtotal={subtotal} delivery={delivery}/><button className="place-order" disabled={submitting}>{submitting?'Placing order…':<>Place Order <ChevronRight/></>}</button></div></form></main>
 }
 
-const STATUS_LABELS={pending_payment:'Awaiting payment',confirmed:'Confirmed',processing:'Processing',shipped:'On the way',delivered:'Delivered',cancelled:'Cancelled',payment_failed:'Payment not completed'};
-const PAYMENT_LABELS={mpesa:'M-Pesa',card:'Card',cod:'Cash on delivery'};
-const PAYMENT_STATUS_LABELS={unpaid:'Unpaid',pending:'Awaiting confirmation',paid:'Paid',failed:'Not completed',refunded:'Refunded'};
-const formatDate=(value)=>new Date(value).toLocaleString('en-KE',{dateStyle:'medium',timeStyle:'short'});
+export const STATUS_LABELS={pending_payment:'Awaiting payment',confirmed:'Confirmed',processing:'Processing',shipped:'On the way',delivered:'Delivered',cancelled:'Cancelled',payment_failed:'Payment not completed'};
+export const PAYMENT_LABELS={mpesa:'M-Pesa',card:'Card',cod:'Cash on delivery'};
+export const PAYMENT_STATUS_LABELS={unpaid:'Unpaid',pending:'Awaiting confirmation',paid:'Paid',failed:'Not completed',refunded:'Refunded'};
+export const formatDate=(value)=>new Date(value).toLocaleString('en-KE',{dateStyle:'medium',timeStyle:'short'});
 
-function OrderDetails({order}){
+export function OrderDetails({order}){
   return <section className="form-card order-details">
     <div className="order-head"><div><span className="eyebrow">ORDER</span><h2>{order.orderNumber}</h2><small>Placed {formatDate(order.createdAt)}</small></div><span className={`status-pill ${order.status}`}>{STATUS_LABELS[order.status]}</span></div>
     <div className="order-lines">{order.items.map((item,i)=><div key={i}><img src={item.image} alt=""/><span><b>{item.name}</b><small>Qty {item.quantity} × {money(item.unitPrice)}</small></span><strong>{money(item.lineTotal)}</strong></div>)}</div>
@@ -828,13 +832,13 @@ function AccountPage({user,signIn,signOut}){
     setBusy(false);
   };
 
-  if(user)return <main className="container narrow"><Breadcrumb items={[['Home','/'],['Account']]}/><div className="account-card"><div className="account-profile"><span><h1>Hi, {user.name.split(' ')[0]}</h1><p>{user.email}{user.phone?` · 0${user.phone.slice(3)}`:''}</p></span><button onClick={signOut}><LogOut/>Sign out</button></div></div>
+  if(user)return <main className="container narrow"><Breadcrumb items={[['Home','/'],['Account']]}/><div className="account-card"><div className="account-profile"><span><h1>Hi, {user.name.split(' ')[0]}</h1><p>{user.email}{user.phone?` · 0${user.phone.slice(3)}`:''}</p></span><button onClick={signOut}><LogOut/>Sign out</button></div>{user.role==='admin'&&<Link className="primary admin-entry" to="/admin">Open admin dashboard</Link>}</div>
     <section className="form-card account-section"><h2>My orders</h2>{orders===null?<p>Loading your orders…</p>:!orders.length?<p>You have not placed any orders yet. <Link to="/shop">Start shopping</Link></p>:<div className="account-orders">{orders.map((o)=><Link key={o.orderNumber} to={'/orders/'+o.orderNumber}><span><b>{o.orderNumber}</b><small>{formatDate(o.createdAt)} · {o.itemCount} item{o.itemCount===1?'':'s'} · {money(o.total)}</small></span><span className={`status-pill ${o.status}`}>{STATUS_LABELS[o.status]}</span></Link>)}</div>}</section></main>;
 
   return <main className="container narrow"><Breadcrumb items={[['Home','/'],['Account']]}/><form className="account-card" onSubmit={submit}><CircleUserRound/>{mode==='signin'?<><h1>Welcome back</h1><p>Sign in to manage orders and saved items.</p><label>Email or phone<input name="identifier" placeholder="you@example.com" autoComplete="username" required/></label></>:<><h1>Create your account</h1><p>Save your cart and wishlist, and follow your orders.</p><label>Full name<input name="name" placeholder="e.g. Amina Wanjiku" autoComplete="name" required/></label><label>Email<input name="email" type="email" placeholder="you@example.com" autoComplete="email" required/></label><label>Phone (optional)<input name="phone" placeholder="0712 345 678" autoComplete="tel"/></label></>}<label>Password<input name="password" type="password" placeholder="••••••••" autoComplete={mode==='signin'?'current-password':'new-password'} minLength={mode==='signin'?undefined:8} required/></label>{error&&<div className="error">{error}</div>}<button className="primary" disabled={busy}>{busy?'Please wait…':mode==='signin'?'Sign in':'Create account'}</button><p className="account-switch">{mode==='signin'?'New to ZawadiMart? ':'Already have an account? '}<button type="button" onClick={()=>{setMode(mode==='signin'?'register':'signin');setError('');}}>{mode==='signin'?'Create an account':'Sign in'}</button></p></form></main>;
 }
-function Empty({icon,title}){return <div className="empty">{icon}<h2>{title}</h2><p>Explore the store and find something you like.</p><Link to="/shop">Start Shopping</Link></div>}
-function Breadcrumb({items}){return <nav className="breadcrumb">{items.map(([label,href],i)=><span key={label}>{i>0&&<ChevronRight size={12}/>} {href?<Link to={href}>{label}</Link>:<b>{label}</b>}</span>)}</nav>}
+export function Empty({icon,title}){return <div className="empty">{icon}<h2>{title}</h2><p>Explore the store and find something you like.</p><Link to="/shop">Start Shopping</Link></div>}
+export function Breadcrumb({items}){return <nav className="breadcrumb">{items.map(([label,href],i)=><span key={label}>{i>0&&<ChevronRight size={12}/>} {href?<Link to={href}>{label}</Link>:<b>{label}</b>}</span>)}</nav>}
 function NotFound(){return <main className="container narrow"><Empty icon={<span className="big404">404</span>} title="Page not found"/></main>}
 
 function InfoBlock(){return <section className="container info-block"><h2>ZawadiMart Kenya — Shopping Made Easier</h2><p>Explore a broad catalogue of products for everyday Kenyan life, including phones, electronics, appliances, computing, fashion, beauty, home essentials and more. ZawadiMart is designed as a realistic e-commerce shopping experience with transparent KES pricing, product categories, cart functionality and convenient checkout flows.</p></section>}
