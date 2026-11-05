@@ -74,6 +74,7 @@ export function configWarnings() {
   const warnings = [];
   if (!config.publicApiUrl.startsWith('https://')) warnings.push('PUBLIC_API_URL should be this API\'s https URL, otherwise M-Pesa callbacks cannot reach it.');
   if (config.corsOrigins.every((origin) => origin.includes('localhost') || origin.includes('127.0.0.1'))) warnings.push('CORS_ORIGINS only lists localhost, so the live storefront cannot call the API.');
+  if (config.mpesa.consumerKey && config.mpesa.env === 'sandbox') warnings.push('M-Pesa uses the Daraja sandbox: prompts are real but payments are test payments. Set MPESA_ENV=production with live keys to take real money.');
   if (config.mpesaMock && !(config.mpesa.consumerKey && config.mpesa.passkey)) warnings.push('MPESA_MOCK is on: M-Pesa orders are marked paid without any money being charged.');
   if (config.frontendUrl.includes('localhost')) warnings.push('FRONTEND_URL points at localhost, so card payments will redirect customers to the wrong site.');
   return warnings;

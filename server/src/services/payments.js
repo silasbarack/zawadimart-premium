@@ -10,10 +10,12 @@ import { initializeTransaction, paystackConfigured, verifyTransaction } from './
 const PROVIDER_LABEL = { mpesa: 'M-Pesa', paystack: 'card', simulation: 'test payment' };
 const MOCK_CONFIRM_SECONDS = 5;
 
-// 'live' (real gateway), 'mock' (test mode, no money moves) or 'off' per method.
+// Per method: 'live' (real gateway), 'sandbox' (Safaricom's test system: real STK
+// prompt, test money), 'mock' (simulated here, nothing is sent) or 'off'.
 export function paymentModes() {
   const mode = (live, mock) => (config.paymentSimulation ? 'mock' : live ? 'live' : mock ? 'mock' : 'off');
-  const mpesa = mode(mpesaConfigured(), config.mpesaMock);
+  let mpesa = mode(mpesaConfigured(), config.mpesaMock);
+  if (mpesa === 'live' && config.mpesa.env === 'sandbox') mpesa = 'sandbox';
   const card = mode(paystackConfigured(), false);
   return {
     mpesa: { available: mpesa !== 'off', mode: mpesa },

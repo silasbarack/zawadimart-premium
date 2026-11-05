@@ -1,6 +1,6 @@
 import { after, afterEach, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { api, adminToken, configureGateways, mockFetch, orderBody, pool, resetDatabase } from './helpers.js';
+import { api, adminToken, config, configureGateways, darajaRoutes, mockFetch, orderBody, pool, resetDatabase } from './helpers.js';
 import { expireStaleOrders } from '../src/services/jobs.js';
 
 let fetchMock;
@@ -63,6 +63,27 @@ describe('M-Pesa mock mode', () => {
     assert.equal(await expireStaleOrders(), 0);
     const tracked = await api().post('/api/orders/track').send({ orderNumber: body.order.orderNumber, contact: '0712345678' }).expect(200);
     assert.equal(tracked.body.order.paymentStatus, 'paid');
+  });
+
+  it('uses real Daraja keys over mock mode, reporting the sandbox as a test system', async () => {
+    configureGateways({ mpesa: true, paystack: false, mpesaMock: true });
+    try {
+      config.mpesa.env = 'sandbox';
+      assert.deepEqual((await api().get('/api/config').expect(200)).body.payments.mpesa, { available: true, mode: 'sandbox' });
+
+      // A real STK push goes to Safaricom's sandbox, even though MPESA_MOCK is still on.
+      fetchMock.restore();
+      fetchMock = mockFetch(darajaRoutes());
+      const { body } = await api().post('/api/orders').send(orderBody({ paymentMethod: 'mpesa' })).expect(201);
+      assert.equal(body.payment.status, 'pending');
+      assert.doesNotMatch(body.payment.message, /test mode/i);
+      assert.ok(fetchMock.calls.some((c) => c.url.startsWith('https://sandbox.safaricom.co.ke/mpesa/stkpush/')));
+
+      config.mpesa.env = 'production';
+      assert.deepEqual((await api().get('/api/config').expect(200)).body.payments.mpesa, { available: true, mode: 'live' });
+    } finally {
+      config.mpesa.env = 'sandbox';
+    }
   });
 
   it('leaves card payments unavailable and is off by default', async () => {
