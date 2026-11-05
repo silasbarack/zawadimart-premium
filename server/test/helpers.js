@@ -7,6 +7,7 @@ process.env.BCRYPT_ROUNDS = '4';
 process.env.RATE_LIMIT = 'off';
 process.env.JWT_SECRET = 'test-secret';
 process.env.PAYMENT_SIMULATION = 'false';
+process.env.MPESA_MOCK = 'false';
 process.env.ADMIN_EMAIL = '';
 process.env.ADMIN_PASSWORD = '';
 
@@ -31,7 +32,8 @@ export async function resetDatabase() {
   await seed({ log: () => {} });
 }
 
-export function configureGateways({ mpesa = true, paystack = true, simulation = false } = {}) {
+export function configureGateways({ mpesa = true, paystack = true, simulation = false, mpesaMock = false } = {}) {
+  config.mpesaMock = mpesaMock;
   Object.assign(config.mpesa, mpesa
     ? { consumerKey: 'key', consumerSecret: 'secret', shortcode: '174379', partyB: '174379', passkey: 'passkey', callbackSecret: 'cb-secret' }
     : { consumerKey: '', consumerSecret: '', shortcode: '', passkey: '', callbackSecret: '' });

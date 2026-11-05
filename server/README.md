@@ -31,6 +31,14 @@ In another terminal, run the storefront from the repo root with `npm run dev`. V
 
 To try checkout without gateway credentials, set `PAYMENT_SIMULATION=true` in `.env`. M-Pesa and card payments then succeed instantly. This setting is ignored when `NODE_ENV=production`.
 
+To test M-Pesa on the live site before you have Daraja keys, set `MPESA_MOCK=true`:
+- No prompt is sent and no money moves.
+- Orders wait a few seconds, as if the customer were entering their PIN, then confirm with a `TEST…` receipt.
+- Checkout and the order page show a test-mode notice, and the order timeline says no money was charged.
+- In the admin dashboard, these payments are listed as "Simulated".
+
+Real Daraja keys always take priority, so once you add them M-Pesa goes live even if `MPESA_MOCK` is still on. Turn it off then anyway.
+
 Other useful commands:
 
 ```bash
@@ -55,6 +63,7 @@ Every setting is listed in [`.env.example`](.env.example). The ones that matter 
 | `PUBLIC_API_URL` | This API's public **https** URL. M-Pesa callbacks are sent here. |
 | `MPESA_*` | Daraja credentials. Use `MPESA_ENV=sandbox` with the sandbox shortcode `174379` and its passkey to test. For a till number, set `MPESA_TRANSACTION_TYPE=CustomerBuyGoodsOnline` and `MPESA_PARTY_B`. |
 | `MPESA_CALLBACK_SECRET` | Random string included in the callback URL. Daraja doesn't sign its callbacks, so this secret is how the API knows a callback is genuine. |
+| `MPESA_MOCK` | `true` turns on M-Pesa test mode (see above). Ignored once real Daraja keys are set. |
 | `PAYSTACK_SECRET_KEY` | Enables card payments. Point the Paystack dashboard webhook at `<PUBLIC_API_URL>/api/payments/paystack/webhook`. |
 
 If a payment method isn't configured, an order using it is rejected with a 503 before any stock is reserved. Cash on delivery always works.
@@ -80,6 +89,7 @@ All endpoints live under `/api`, and money is in whole Kenyan shillings. Errors 
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/health` | Database liveness check. |
+| GET | `/config` | Which payment methods work: `{ payments: { mpesa, card, cod } }`, each `{ available, mode }` with mode `live`, `mock` or `off`. |
 | GET | `/categories` | Each category includes `productCount`. |
 | GET | `/categories/:slug` | |
 | GET | `/products` | Query parameters: `q`, `category`, `sort` (`featured`, `low`, `high`, `rating`, `popular`, `discount` or `newest`), `minPrice`, `maxPrice`, `inStock`, `ids=1,2,3`, `page`, `limit` (max 200). Returns `{ items, total, page, limit, pages }`. |

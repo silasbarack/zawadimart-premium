@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { query } from './db/pool.js';
 import { errorHandler } from './errors.js';
 import { authenticate } from './middleware/auth.js';
+import { paymentModes } from './services/payments.js';
 import adminRoutes from './routes/admin.js';
 import authRoutes from './routes/auth.js';
 import cartRoutes from './routes/cart.js';
@@ -37,6 +38,11 @@ export function createApp() {
     } catch {
       res.status(503).json({ status: 'degraded', database: 'unreachable' });
     }
+  });
+
+  // Lets the storefront show which payment methods work and whether one is in test mode.
+  app.get('/api/config', (req, res) => {
+    res.json({ payments: paymentModes() });
   });
 
   app.use('/api', authenticate);
