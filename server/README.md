@@ -39,6 +39,18 @@ To test M-Pesa on the live site before you have Daraja keys, set `MPESA_MOCK=tru
 
 Real Daraja keys always take priority, so once you add them M-Pesa goes live even if `MPESA_MOCK` is still on. Turn it off then anyway.
 
+### Testing with the Daraja sandbox
+
+To send real STK pushes through Safaricom's test system:
+1. Create an app on the Safaricom developer portal (developer.safaricom.co.ke) with the M-Pesa Express product. Copy its consumer key and secret into `MPESA_CONSUMER_KEY` and `MPESA_CONSUMER_SECRET`.
+2. Set `MPESA_ENV=sandbox`, `MPESA_SHORTCODE=174379` and `MPESA_PASSKEY` to the sandbox passkey shown on the portal's M-Pesa Express simulator.
+
+While M-Pesa is in sandbox mode:
+- The API reports the mode as `sandbox`, and checkout keeps a TEST tag and a notice that these are test payments.
+- The callback goes to `PUBLIC_API_URL`. If it's missed, payment-status polling asks Daraja for the result.
+
+To go live, switch to your production shortcode, passkey and keys with `MPESA_ENV=production`.
+
 Other useful commands:
 
 ```bash
@@ -89,7 +101,7 @@ All endpoints live under `/api`, and money is in whole Kenyan shillings. Errors 
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/health` | Database liveness check. |
-| GET | `/config` | Which payment methods work: `{ payments: { mpesa, card, cod } }`, each `{ available, mode }` with mode `live`, `mock` or `off`. |
+| GET | `/config` | Which payment methods work: `{ payments: { mpesa, card, cod } }`, each `{ available, mode }` with mode `live`, `sandbox` (Daraja sandbox), `mock` or `off`. |
 | GET | `/categories` | Each category includes `productCount`. |
 | GET | `/categories/:slug` | |
 | GET | `/products` | Query parameters: `q`, `category`, `sort` (`featured`, `low`, `high`, `rating`, `popular`, `discount` or `newest`), `minPrice`, `maxPrice`, `inStock`, `ids=1,2,3`, `page`, `limit` (max 200). Returns `{ items, total, page, limit, pages }`. |

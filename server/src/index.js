@@ -9,7 +9,7 @@ assertProductionConfig();
 const server = createApp().listen(config.port, () => {
   console.log(`ZawadiMart API listening on port ${config.port} (${config.nodeEnv})`);
   const modes = paymentModes();
-  const label = { live: 'live', mock: 'TEST MODE (no money charged)', off: 'not configured' };
+  const label = { live: 'live', sandbox: 'SANDBOX (Safaricom test system)', mock: 'TEST MODE (no money charged)', off: 'not configured' };
   console.log(`Payments: M-Pesa: ${label[modes.mpesa.mode]}, cards: ${label[modes.card.mode]}, cash on delivery: enabled`);
   configWarnings().forEach((warning) => console.warn(`WARNING: ${warning}`));
 });
