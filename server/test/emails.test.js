@@ -26,7 +26,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   fetchMock?.restore();
-  Object.assign(config.email, { host: '', from: '' });
+  Object.assign(config.email, { host: '', from: '', resendApiKey: '' });
   setEmailTransport(null);
 });
 after(() => pool.end());
@@ -148,5 +148,38 @@ describe('Order emails', () => {
     assert.equal(sent.length, 0);
     const detail = await api().get(`/api/orders/${res.body.order.orderNumber}?key=${res.body.accessKey}`).expect(200);
     assert.deepEqual(detail.body.order.emails, []);
+  });
+});
+
+describe('Sending through Resend', () => {
+  beforeEach(() => {
+    setEmailTransport(null);
+    Object.assign(config.email, { host: '', resendApiKey: 're_test_key', from: 'ZawadiMart <orders@zawadimart.test>' });
+  });
+
+  it('sends the email with the logo inline through the Resend API', async () => {
+    fetchMock = mockFetch({ 'api.resend.com/emails': () => ({ id: 'email_123' }) });
+    const res = await api().post('/api/orders').send(orderBody()).expect(201);
+    await flushOrderEmails();
+    const call = fetchMock.calls.find((c) => c.url === 'https://api.resend.com/emails');
+    assert.equal(call.init.headers.Authorization, 'Bearer re_test_key');
+    assert.deepEqual(call.body.to, ['amina@example.com']);
+    assert.equal(call.body.from, 'ZawadiMart <orders@zawadimart.test>');
+    assert.equal(call.body.subject, `Order ${res.body.order.orderNumber} confirmed`);
+    assert.match(call.body.html, /src="cid:zawadimart-logo"/);
+    assert.equal(call.body.attachments[0].content_id, 'zawadimart-logo');
+    assert.ok(call.body.attachments[0].content.length > 1000, 'the logo is attached');
+  });
+
+  it("records Resend's reason when it refuses an email", async () => {
+    fetchMock = mockFetch({ 'api.resend.com/emails': () => ({ status: 403, body: { name: 'validation_error', message: 'You can only send testing emails to your own email address.' } }) });
+    const res = await api().post('/api/orders').send(orderBody()).expect(201);
+    await flushOrderEmails();
+    const { rows: [record] } = await pool.query(
+      `SELECT e.status, e.error FROM order_emails e JOIN orders o ON o.id = e.order_id WHERE o.order_number = $1`,
+      [res.body.order.orderNumber],
+    );
+    assert.equal(record.status, 'failed');
+    assert.match(record.error, /Resend refused the email \(403\): You can only send testing emails/);
   });
 });

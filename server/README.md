@@ -53,7 +53,12 @@ To go live, switch to your production shortcode, passkey and keys with `MPESA_EN
 
 ### Order and payment emails
 
-With SMTP set up (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`), customers get an email with the ZawadiMart logo:
+With an email service set up, customers get an email with the ZawadiMart logo. Use either:
+
+- **Resend** (`RESEND_API_KEY`, `MAIL_FROM`): sends over HTTPS, so it works on Render's free plan, which blocks mail ports. `MAIL_FROM` must be on a domain you have verified in Resend. Before that, `ZawadiMart <onboarding@resend.dev>` works but only delivers to the email address of your Resend account.
+- **SMTP** (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`): for hosts that allow outgoing mail ports (Render's paid plans).
+
+If both are set, Resend is used. The emails:
 
 | When | Email |
 | --- | --- |
@@ -62,7 +67,7 @@ With SMTP set up (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM
 | A payment fails | Payment not completed, with the reason and what to do next |
 | An order is cancelled (by the customer, by staff, or unpaid in time) | Order cancelled, with the reason |
 
-Each kind of email is sent at most once per order, after the change is saved, so repeated M-Pesa callbacks never send duplicates. Every send is recorded in `order_emails`; a failed send is logged there with the error and is retried the next time that email is triggered. The logo is attached inline (`cid:`), so it shows even when the mail app blocks remote images. Without SMTP, emails are skipped and the startup log says so.
+Each kind of email is sent at most once per order, after the change is saved, so repeated M-Pesa callbacks never send duplicates. Every send is recorded in `order_emails`; a failed send is logged there with the error and is retried the next time that email is triggered. The logo is attached inline (`cid:`), so it shows even when the mail app blocks remote images. Without an email service, emails are skipped and the startup log says so.
 
 For Gmail, use `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465` and an App Password (Google Account, Security, App passwords) as `SMTP_PASS`.
 
