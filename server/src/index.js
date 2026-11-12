@@ -1,7 +1,7 @@
 import { assertProductionConfig, config, configWarnings } from './config.js';
 import { createApp } from './app.js';
 import { pool } from './db/pool.js';
-import { emailConfigured } from './services/email.js';
+import { emailConfigured, emailProviderLabel } from './services/email.js';
 import { paymentModes } from './services/payments.js';
 import { startBackgroundJobs } from './services/jobs.js';
 
@@ -12,7 +12,7 @@ const server = createApp().listen(config.port, () => {
   const modes = paymentModes();
   const label = { live: 'live', sandbox: 'SANDBOX (Safaricom test system)', mock: 'TEST MODE (no money charged)', off: 'not configured' };
   console.log(`Payments: M-Pesa: ${label[modes.mpesa.mode]}, cards: ${label[modes.card.mode]}, cash on delivery: enabled`);
-  console.log(`Emails: ${emailConfigured() ? `on, via ${config.email.host}` : 'off (SMTP not configured)'}`);
+  console.log(`Emails: ${emailConfigured() ? `on, via ${emailProviderLabel()}` : 'off (no email service configured)'}`);
   configWarnings().forEach((warning) => console.warn(`WARNING: ${warning}`));
 });
 
