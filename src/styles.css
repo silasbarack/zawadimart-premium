@@ -985,3 +985,12 @@ img.is-loading{background:linear-gradient(90deg,#ececec 25%,#f7f7f7 50%,#ececec 
 img.is-loaded{animation:img-fade-in .3s ease-out}
 @keyframes img-shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
 @keyframes img-fade-in{from{opacity:0}to{opacity:1}}
+
+/* Product page: Buy now goes straight to checkout */
+.buy-now{flex:1;min-height:44px;border:0;border-radius:7px;background:#1f1f1f;color:#fff;font-size:14.5px;font-weight:800;cursor:pointer}
+@media (hover:hover){.buy-now:hover{background:#000}}
+@media(max-width:780px){
+  .detail-actions{flex-wrap:wrap}
+  .detail-actions .buy,.detail-actions .buy-now{min-height:46px}
+  .detail-actions .buy-now{order:4;flex-basis:100%}
+}
