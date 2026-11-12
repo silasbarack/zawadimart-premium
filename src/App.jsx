@@ -306,13 +306,32 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
   const location=useLocation();
   const [q,setQ]=useState('');
   const submit=(e)=>{e.preventDefault();navigate(q.trim()?'/shop?q='+encodeURIComponent(q.trim()):'/shop');};
+  const menuButton=useRef(null), drawerPanel=useRef(null), drawerClose=useRef(null);
+  // Closing with Escape, the close button or the backdrop hands focus back to the menu button.
+  const closeMenu=()=>{ setMenuOpen(false); menuButton.current?.focus(); };
+  useEffect(()=>{
+    if(!menuOpen) return;
+    drawerClose.current?.focus({preventScroll:true});
+    const onKey=(e)=>{
+      if(e.key==='Escape'){ e.preventDefault(); closeMenu(); return; }
+      if(e.key!=='Tab') return;
+      // Keep Tab cycling inside the open drawer.
+      const items=[...drawerPanel.current.querySelectorAll('a[href],button:not([disabled])')];
+      const first=items[0], last=items[items.length-1], current=document.activeElement;
+      if(!drawerPanel.current.contains(current)){ e.preventDefault(); first.focus(); }
+      else if(e.shiftKey&&current===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey&&current===last){ e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown',onKey);
+    return ()=>document.removeEventListener('keydown',onKey);
+  },[menuOpen]);
   return (
     <>
       <div className="top-strip"><div className="container">Sell on ZawadiMart · Track your order · Help Centre · Prices in KES</div></div>
       <MobileRetailBars/>
       <header className="site-header">
         <div className="container header-main">
-          <button className="menu-btn" onClick={()=>setMenuOpen(true)} aria-label="Open menu" aria-expanded={menuOpen}><Menu aria-hidden="true"/></button>
+          <button ref={menuButton} className="menu-btn" onClick={()=>setMenuOpen(true)} aria-label="Open menu" aria-expanded={menuOpen}><Menu aria-hidden="true"/></button>
           <Link to="/" className="brand"><BrandLogo/></Link>
           <div className="header-search-stack">
             <form className="search-box" onSubmit={submit} role="search"><Search aria-hidden="true"/><input aria-label="Search products" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/><button>Search</button></form>
@@ -344,9 +363,10 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
       </nav>
       {/* While closed the drawer only slides off screen, so inert keeps its links out of the tab order. */}
       <div className={`drawer ${menuOpen?'open':''}`} inert={menuOpen?undefined:''}>
-        <button className="drawer-bg" onClick={()=>setMenuOpen(false)} tabIndex={-1} aria-hidden="true" />
-        <aside aria-label="Menu">
-          <div className="drawer-head"><BrandLogo compact/><button onClick={()=>setMenuOpen(false)} aria-label="Close menu"><X aria-hidden="true"/></button></div>
+        <button className="drawer-bg" onClick={closeMenu} tabIndex={-1} aria-hidden="true" />
+        {/* A link to the page you're already on doesn't change the route, so close on any link click too. */}
+        <aside ref={drawerPanel} role="dialog" aria-modal="true" aria-label="Menu" onClick={e=>{ if(e.target.closest('a')) setMenuOpen(false); }}>
+          <div className="drawer-head"><BrandLogo compact/><button ref={drawerClose} onClick={closeMenu} aria-label="Close menu"><X aria-hidden="true"/></button></div>
           <Link to="/shop"><LayoutGrid/>All Categories</Link>
           {categories.map(c=><Link key={c.slug} to={'/category/'+c.slug}><span>{c.icon}</span>{c.name}</Link>)}
           <Link to="/deals"><Tag/>Deals & Offers</Link>
