@@ -86,6 +86,11 @@ export async function stkQuery(checkoutRequestId) {
     return { state: 'pending', reason: body.errorMessage, raw: body };
   }
   const code = String(body.ResultCode);
+  // 4999 "The transaction is still under processing": the customer hasn't answered the
+  // prompt yet. That is not a failure, so keep waiting.
+  if (code === '4999' || /still under processing|being processed/i.test(body.ResultDesc || '')) {
+    return { state: 'pending', reason: body.ResultDesc, raw: body };
+  }
   return code === '0'
     ? { state: 'success', raw: body }
     : { state: 'failed', code, reason: body.ResultDesc || `M-Pesa result ${code}`, raw: body };

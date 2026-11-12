@@ -115,6 +115,22 @@ describe('M-Pesa STK Push', () => {
     assert.equal(res.body.status, 'confirmed');
   });
 
+  it('keeps waiting while M-Pesa says the payment is still under processing', async () => {
+    const { order, accessKey } = await placeMpesaOrder();
+    fetchMock.restore();
+    fetchMock = mockFetch(darajaRoutes({
+      '/mpesa/stkpushquery/v1/query': () => ({ ResponseCode: '0', ResultCode: '4999', ResultDesc: 'The transaction is still under processing' }),
+    }));
+    const waiting = await api().get(`/api/orders/${order.orderNumber}/payment-status?key=${accessKey}`).expect(200);
+    assert.equal(waiting.body.paymentStatus, 'pending', 'not marked failed before the customer enters their PIN');
+    assert.equal(waiting.body.failure, null);
+
+    const { rows: [payment] } = await pool.query('SELECT reference FROM payments ORDER BY id DESC LIMIT 1');
+    await api().post('/api/payments/mpesa/callback/cb-secret').send(stkCallback(payment.reference, { amount: order.total })).expect(200);
+    const paid = await api().get(`/api/orders/${order.orderNumber}/payment-status?key=${accessKey}`).expect(200);
+    assert.equal(paid.body.paymentStatus, 'paid');
+  });
+
   it('keeps the order (unpaid) if Daraja rejects the push', async () => {
     fetchMock = mockFetch(darajaRoutes({
       '/mpesa/stkpush/v1/processrequest': () => ({ status: 400, body: { errorCode: '400.002.02', errorMessage: 'Bad Request - Invalid PhoneNumber' } }),
