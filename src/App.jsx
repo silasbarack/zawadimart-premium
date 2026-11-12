@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Banknote, ChevronLeft, ChevronRight, CircleAlert, CircleCheck, CircleUserRound, Clock3, Heart, Home,
   LayoutGrid, LogOut, Menu, Minus, PackageCheck, Plus, Search, ShieldCheck,
@@ -15,6 +15,16 @@ import { useCatalog } from './catalog';
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const scrollToTop = () => window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+
+// Moves keyboard focus past the header to the page's <main>, without changing the URL.
+const skipToMain = (event) => {
+  const main = document.querySelector('main');
+  if (!main) return;
+  event.preventDefault();
+  main.setAttribute('tabindex', '-1');
+  main.focus({ preventScroll: true });
+  main.scrollIntoView({ block: 'start' });
+};
 
 // Loaded only when an admin opens /admin, so shoppers never download it.
 const AdminPage = lazy(() => import('./admin'));
@@ -251,7 +261,8 @@ function App() {
 
   return (
     <div className="app-shell">
-      {toast && <div className="toast"><CircleCheck size={16}/>{toast}</div>}
+      <a className="skip-link" href="#main" onClick={skipToMain}>Skip to main content</a>
+      {toast &&<div className="toast"><CircleCheck size={16}/>{toast}</div>}
       {productLoading && <ProductLoadingOverlay product={productLoading}/>}
       <Header cartCount={cartCount} menuOpen={menuOpen} setMenuOpen={setMenuOpen}/>
       <Routes>
@@ -301,10 +312,10 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
       <MobileRetailBars/>
       <header className="site-header">
         <div className="container header-main">
-          <button className="menu-btn" onClick={()=>setMenuOpen(true)}><Menu/></button>
+          <button className="menu-btn" onClick={()=>setMenuOpen(true)} aria-label="Open menu" aria-expanded={menuOpen}><Menu aria-hidden="true"/></button>
           <Link to="/" className="brand"><BrandLogo/></Link>
           <div className="header-search-stack">
-            <form className="search-box" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/><button>Search</button></form>
+            <form className="search-box" onSubmit={submit} role="search"><Search aria-hidden="true"/><input aria-label="Search products" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/><button>Search</button></form>
             <div className="header-payment-row" aria-label="Accepted payment methods">
               <span className="header-payment-label">Pay securely with</span>
               <PaymentMarks compact withLabel={false}/>
@@ -315,7 +326,7 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
         </div>
         <div className="container mobile-search-row">
           <div className="mobile-search-stack">
-            <form className="search-box mobile-search" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/></form>
+            <form className="search-box mobile-search" onSubmit={submit} role="search"><Search aria-hidden="true"/><input aria-label="Search products" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/></form>
             <div className="mobile-payment-row" aria-label="Accepted payment methods">
               <span>Pay securely with</span>
               <PaymentMarks compact withLabel={false}/>
@@ -331,10 +342,11 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
           <Link className="deal-link" to="/deals">Deals</Link>
         </div>
       </nav>
-      <div className={`drawer ${menuOpen?'open':''}`}>
-        <button className="drawer-bg" onClick={()=>setMenuOpen(false)} />
-        <aside>
-          <div className="drawer-head"><BrandLogo compact/><button onClick={()=>setMenuOpen(false)}><X/></button></div>
+      {/* While closed the drawer only slides off screen, so inert keeps its links out of the tab order. */}
+      <div className={`drawer ${menuOpen?'open':''}`} inert={menuOpen?undefined:''}>
+        <button className="drawer-bg" onClick={()=>setMenuOpen(false)} tabIndex={-1} aria-hidden="true" />
+        <aside aria-label="Menu">
+          <div className="drawer-head"><BrandLogo compact/><button onClick={()=>setMenuOpen(false)} aria-label="Close menu"><X aria-hidden="true"/></button></div>
           <Link to="/shop"><LayoutGrid/>All Categories</Link>
           {categories.map(c=><Link key={c.slug} to={'/category/'+c.slug}><span>{c.icon}</span>{c.name}</Link>)}
           <Link to="/deals"><Tag/>Deals & Offers</Link>
@@ -564,8 +576,30 @@ function DealSection({title,tone,items,addToCart,wishlist,toggleWishlist,openPro
       <div className="deal-title-wrap"><h2>{title}</h2>{flash&&<FlashCountdown/>}</div>
       <Link to={to} aria-label={'View '+title}><ChevronRight/></Link>
     </div>
-    <div className="deal-scroll">{items.map(p=><ProductCard key={p.id} product={p} addToCart={addToCart} wishlist={wishlist} toggleWishlist={toggleWishlist} openProduct={openProduct}/>)}</div>
+    <ScrollRow className="deal-scroll" label={title}>{items.map(p=><ProductCard key={p.id} product={p} addToCart={addToCart} wishlist={wishlist} toggleWishlist={toggleWishlist} openProduct={openProduct}/>)}</ScrollRow>
   </section>
+}
+
+// A sideways-scrolling row. The scrollbar is hidden, so on desktop with a mouse
+// (no trackpad or touch to swipe) arrows appear while there is more to see.
+// They are skipped by Tab: keyboard users reach every card by tabbing, which scrolls the row.
+function ScrollRow({className,label,children}){
+  const ref=useRef(null);
+  const [edges,setEdges]=useState({start:true,end:true});
+  useEffect(()=>{
+    const el=ref.current; if(!el) return;
+    const update=()=>setEdges({start:el.scrollLeft<=2,end:el.scrollLeft+el.clientWidth>=el.scrollWidth-2});
+    update();
+    el.addEventListener('scroll',update,{passive:true});
+    const observer=new ResizeObserver(update); observer.observe(el);
+    return ()=>{el.removeEventListener('scroll',update); observer.disconnect();};
+  },[]);
+  const page=(direction)=>{const el=ref.current; el.scrollBy({left:direction*el.clientWidth*0.85,behavior:prefersReducedMotion()?'auto':'smooth'});};
+  return <div className="scroll-row">
+    {!edges.start&&<button type="button" className="ad-arrow row-arrow prev" onClick={()=>page(-1)} tabIndex={-1} aria-label={'Scroll '+label+' back'}><ChevronLeft aria-hidden="true"/></button>}
+    <div className={className} ref={ref}>{children}</div>
+    {!edges.end&&<button type="button" className="ad-arrow row-arrow next" onClick={()=>page(1)} tabIndex={-1} aria-label={'Scroll '+label+' forward'}><ChevronRight aria-hidden="true"/></button>}
+  </div>;
 }
 
 function ProductCard({product,addToCart,wishlist,toggleWishlist,openProduct}){
@@ -582,7 +616,7 @@ function ProductCard({product,addToCart,wishlist,toggleWishlist,openProduct}){
       <div className="rating"><Star size={14} fill="currentColor"/>{product.rating} <span>({product.reviews})</span></div>
       <strong className="price">{money(product.price)}</strong>
       <div className="old-row"><del>{money(product.oldPrice)}</del><span>-{discount(product)}%</span></div>
-      <div className="card-actions"><button onClick={()=>addToCart(product.id)}>Add to cart</button><button className={wishlist.includes(product.id)?'wish active':'wish'} onClick={()=>toggleWishlist(product.id)}><Heart size={16} fill={wishlist.includes(product.id)?'currentColor':'none'}/></button></div>
+      <div className="card-actions"><button onClick={()=>addToCart(product.id)}>Add to cart</button><button className={wishlist.includes(product.id)?'wish active':'wish'} onClick={()=>toggleWishlist(product.id)} aria-label={'Save '+product.name+' to wishlist'} aria-pressed={wishlist.includes(product.id)}><Heart aria-hidden="true" size={16} fill={wishlist.includes(product.id)?'currentColor':'none'}/></button></div>
     </div>
   </article>
 }
@@ -703,12 +737,12 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
     </main>;
   }
 
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,cat.slug?'/category/'+cat.slug:'/shop'],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p>{p.stock>0?<div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div>:<div className="in-stock out"><CircleAlert/>Out of stock</div>}<div className="detail-actions"><div className="qty"><button onClick={()=>setQty(Math.max(1,qty-1))}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))}><Plus/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)}><Heart fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,cat.slug?'/category/'+cat.slug:'/shop'],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p>{p.stock>0?<div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div>:<div className="in-stock out"><CircleAlert/>Out of stock</div>}<div className="detail-actions"><div className="qty" role="group" aria-label="Quantity"><button onClick={()=>setQty(Math.max(1,qty-1))} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)} aria-label="Save to wishlist" aria-pressed={wishlist.includes(p.id)}><Heart aria-hidden="true" fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
 }
 
 function CartPage({rows,subtotal,setQty,remove}){
   const delivery=subtotal>=10000?0:(subtotal?350:0);
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart']]}/><h1 className="page-title">Shopping Cart</h1>{!rows.length?<Empty icon={<ShoppingCart/>} title="Your cart is empty"/>:<div className="cart-layout"><div>{rows.map(({product,qty})=><div className="cart-row" key={product.id}><img src={product.image} alt=""/><div><h3>{product.name}</h3><strong>{money(product.price)}</strong></div><div className="cart-controls"><div className="qty"><button onClick={()=>setQty(product.id,qty-1)}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(product.id,qty+1)}><Plus/></button></div><button onClick={()=>remove(product.id)}><Trash2/>Remove</button></div></div>)}</div><OrderSummary subtotal={subtotal} delivery={delivery} checkout/></div>}</main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart']]}/><h1 className="page-title">Shopping Cart</h1>{!rows.length?<Empty icon={<ShoppingCart/>} title="Your cart is empty"/>:<div className="cart-layout"><div>{rows.map(({product,qty})=><div className="cart-row" key={product.id}><img src={product.image} alt=""/><div><h3>{product.name}</h3><strong>{money(product.price)}</strong></div><div className="cart-controls"><div className="qty" role="group" aria-label={'Quantity of '+product.name}><button onClick={()=>setQty(product.id,qty-1)} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(product.id,qty+1)} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button onClick={()=>remove(product.id)}><Trash2/>Remove</button></div></div>)}</div><OrderSummary subtotal={subtotal} delivery={delivery} checkout/></div>}</main>
 }
 
 function OrderSummary({subtotal,delivery,checkout=false}){
