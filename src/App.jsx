@@ -208,45 +208,34 @@ function App() {
     if(token) (saved?api('/wishlist/'+id,{method:'DELETE'}):api('/wishlist',{method:'POST',body:{productId:id}})).catch(()=>{});
   };
 
+  // Opens a product once its photo has loaded, so the page appears complete. The overlay
+  // only shows if that takes more than a moment, so fast connections never see it flash.
+  const opening = useRef(false);
   const openProduct = (product) => {
-    if (!product || productLoading) return;
-
-    setProductLoading(product);
-
-    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-    const effectiveType = connection?.effectiveType || '4g';
-    const minDelay = connection?.saveData
-      ? 1400
-      : effectiveType === 'slow-2g'
-        ? 1900
-        : effectiveType === '2g'
-          ? 1600
-          : effectiveType === '3g'
-            ? 1000
-            : 520;
-
-    const startedAt = performance.now();
-    let completed = false;
-
+    if (!product || opening.current) return;
+    opening.current = true;
+    let finished = false;
+    let shownAt = 0;
+    const showTimer = window.setTimeout(() => { shownAt = performance.now(); setProductLoading(product); }, 250);
     const finish = () => {
-      if (completed) return;
-      completed = true;
-
-      const elapsed = performance.now() - startedAt;
-      const wait = Math.max(0, minDelay - elapsed);
-
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(showTimer);
+      // Once the overlay is up, keep it for a beat so it doesn't flicker.
+      const wait = shownAt ? Math.max(0, 450 - (performance.now() - shownAt)) : 0;
       window.setTimeout(() => {
         navigate('/product/' + product.id);
-        window.setTimeout(() => setProductLoading(null), 180);
+        opening.current = false;
+        window.setTimeout(() => setProductLoading(null), 120);
       }, wait);
     };
-
     const image = new Image();
     image.onload = finish;
     image.onerror = finish;
     image.src = product.image;
-
-    window.setTimeout(finish, Math.max(minDelay + 1400, 2800));
+    if (image.complete) finish();
+    // On a very slow connection, stop waiting: the page opens and the photo keeps loading there.
+    window.setTimeout(finish, 8000);
   };
 
   const shared={addToCart,wishlist,toggleWishlist,openProduct};
@@ -279,6 +268,8 @@ function App() {
 }
 
 function ProductLoadingOverlay({ product }) {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => { const timer = setTimeout(() => setSlow(true), 3000); return () => clearTimeout(timer); }, []);
   return (
     <div className="product-loading-overlay" role="status" aria-live="polite" aria-label={'Loading ' + product.name}>
       <div className="product-loader-card">
@@ -286,7 +277,7 @@ function ProductLoadingOverlay({ product }) {
         <div className="product-loader-spinner" aria-hidden="true" />
         <strong>Loading product</strong>
         <span>{product.name}</span>
-        <small>Preparing product details…</small>
+        <small>{slow ? 'Your connection seems slow. Still loading the photos…' : 'Preparing product details…'}</small>
       </div>
     </div>
   );
@@ -614,6 +605,15 @@ function ScrollRow({className,label,children}){
   </div>;
 }
 
+// A photo that shimmers while it downloads, then fades in. Off-screen photos wait until
+// they are scrolled near, which keeps slow connections free for what is on screen.
+function LoadingImg({src,alt}){
+  const ref=useRef(null);
+  const [loaded,setLoaded]=useState(false);
+  useEffect(()=>{ const img=ref.current; setLoaded(Boolean(img?.complete&&img.naturalWidth)); },[src]);
+  return <img ref={ref} src={src} alt={alt} loading="lazy" decoding="async" className={loaded?'is-loaded':'is-loading'} onLoad={()=>setLoaded(true)} onError={()=>setLoaded(true)}/>;
+}
+
 function ProductCard({product,addToCart,wishlist,toggleWishlist,openProduct}){
   const open = (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
@@ -622,7 +622,7 @@ function ProductCard({product,addToCart,wishlist,toggleWishlist,openProduct}){
   };
 
   return <article className="product-card">
-    <Link className="product-img" to={'/product/'+product.id} onClick={open}><img src={product.image} alt={product.name}/><span className="stock-label">{product.stock} items in stock</span></Link>
+    <Link className="product-img" to={'/product/'+product.id} onClick={open}><LoadingImg src={product.image} alt={product.name}/><span className="stock-label">{product.stock} items in stock</span></Link>
     <div className="product-body">
       <Link to={'/product/'+product.id} onClick={open}><h3>{product.name}</h3></Link>
       <div className="rating"><Star size={14} fill="currentColor"/>{product.rating} <span>({product.reviews})</span></div>
@@ -678,15 +678,6 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
   useEffect(()=>{
     if(!p) return;
     let cancelled=false;
-    let retryTimer;
-
-    const networkDelay=()=>{
-      const type=navigator.connection?.effectiveType;
-      if(type==='slow-2g') return 1400;
-      if(type==='2g') return 1000;
-      if(type==='3g') return 650;
-      return 280;
-    };
 
     const loadProduct=()=>{
       if(cancelled) return;
@@ -697,12 +688,9 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
       }
       setOffline(false);
       setLoading(true);
-      const started=Date.now();
+      // Shows the page as soon as the photo has really loaded (no artificial delay).
       const image=new Image();
-      const finish=()=>{
-        const wait=Math.max(0,networkDelay()-(Date.now()-started));
-        retryTimer=setTimeout(()=>{ if(!cancelled) setLoading(false); },wait);
-      };
+      const finish=()=>{ if(!cancelled) setLoading(false); };
       image.onload=finish;
       image.onerror=finish;
       image.src=p.image;
@@ -717,7 +705,6 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
 
     return ()=>{
       cancelled=true;
-      clearTimeout(retryTimer);
       window.removeEventListener('online',onlineHandler);
       window.removeEventListener('offline',offlineHandler);
     };

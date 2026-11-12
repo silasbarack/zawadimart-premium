@@ -142,9 +142,9 @@ footer{margin-top:4px;background:#303030;color:#eee}.back-top{height:58px;backgr
   width:38px;
   height:38px;
   margin-bottom:15px;
-  border:4px solid #e7eee9;
-  border-top-color:var(--green);
-  border-right-color:var(--brand);
+  border:4px solid #f6dcdc;
+  border-top-color:var(--brand);
+  border-right-color:var(--accent);
   border-radius:50%;
   animation:product-spin .82s linear infinite;
 }
@@ -979,3 +979,9 @@ main:focus{outline:none}
 .order-message.positive{background:#e8f7ef;border-color:#9fd9b9;color:#0b4f2f}
 .order-message.failed{background:#fdecec;border-color:#f2b3b4;color:#7a0a0c}
 .order-message.neutral{background:#f6f6f6;border-color:#e2e2e2;color:#333}
+
+/* Product photos: a shimmer while they download, then a short fade in */
+img.is-loading{background:linear-gradient(90deg,#ececec 25%,#f7f7f7 50%,#ececec 75%);background-size:200% 100%;animation:img-shimmer 1.2s ease-in-out infinite}
+img.is-loaded{animation:img-fade-in .3s ease-out}
+@keyframes img-shimmer{from{background-position:100% 0}to{background-position:-100% 0}}
+@keyframes img-fade-in{from{opacity:0}to{opacity:1}}
