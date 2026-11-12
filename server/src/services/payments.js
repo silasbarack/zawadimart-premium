@@ -4,7 +4,9 @@ import { query, withTransaction } from '../db/pool.js';
 import { AppError } from '../errors.js';
 import { GatewayError } from './gateway-error.js';
 import { mpesaConfigured, parseStkCallback, stkPush, stkQuery } from './mpesa.js';
+import { queueOrderEmail } from './notifications.js';
 import { addEvent, lockOrder } from './orders.js';
+import { describeFailure, initiationFailureCode } from './payment-reasons.js';
 import { initializeTransaction, paystackConfigured, verifyTransaction } from './paystack.js';
 
 const PROVIDER_LABEL = { mpesa: 'M-Pesa', paystack: 'card', simulation: 'test payment' };
@@ -44,10 +46,13 @@ async function failInitiation(order, payment, error) {
   if (!(error instanceof GatewayError)) console.error('Unexpected payment initiation error', error);
   else console.warn(`Payment initiation failed for ${order.order_number}: ${error.message}`, error.response ?? '');
   const reason = error instanceof GatewayError ? error.message : 'Unexpected error';
-  await query(`UPDATE payments SET status = 'failed', failure_reason = $2, raw = $3, updated_at = now() WHERE id = $1`,
-    [payment.id, reason, error.response ? JSON.stringify(error.response) : null]);
-  await query(`UPDATE orders SET payment_status = 'failed', updated_at = now() WHERE id = $1 AND payment_status <> 'paid'`, [order.id]);
-  await addEvent({ query }, order.id, 'payment_failed', `Payment could not be started: ${reason}`);
+  const code = error instanceof GatewayError ? initiationFailureCode(reason) : 'initiation';
+  await query(`UPDATE payments SET status = 'failed', failure_reason = $2, failure_code = $3, raw = $4, updated_at = now() WHERE id = $1`,
+    [payment.id, reason, code, error.response ? JSON.stringify(error.response) : null]);
+  const { rowCount } = await query(`UPDATE orders SET payment_status = 'failed', updated_at = now() WHERE id = $1 AND payment_status <> 'paid'`, [order.id]);
+  await addEvent({ query }, order.id, 'payment_failed', `Payment could not be started: ${describeFailure(code, reason).title}.`);
+  if (rowCount) queueOrderEmail(order.id, 'payment_failed');
+  return describeFailure(code, reason);
 }
 
 // Kicks off payment for an order that is awaiting payment. Returns a summary for the client.
@@ -92,8 +97,8 @@ export async function startPayment(order, { mpesaPhone } = {}) {
         message: `An M-Pesa prompt has been sent to ${mpesaPhone}. Enter your M-Pesa PIN to complete payment.`,
       };
     } catch (error) {
-      await failInitiation(order, payment, error);
-      return { method, status: 'failed', message: 'We could not send the M-Pesa prompt. Please check the number and try again.' };
+      const failure = await failInitiation(order, payment, error);
+      return { method, status: 'failed', message: `${failure.title}. ${failure.action}`, failure };
     }
   }
 
@@ -113,14 +118,21 @@ export async function startPayment(order, { mpesaPhone } = {}) {
     await query(`UPDATE orders SET payment_status = 'pending', updated_at = now() WHERE id = $1 AND payment_status <> 'paid'`, [order.id]);
     return { method, status: 'redirect', checkoutUrl: authorizationUrl, message: 'Continue to the secure card payment page.' };
   } catch (error) {
-    await failInitiation(order, payment, error);
-    return { method, status: 'failed', message: 'We could not start the card payment. Please try again.' };
+    const failure = await failInitiation(order, payment, error);
+    return { method, status: 'failed', message: `${failure.title}. ${failure.action}`, failure };
   }
 }
 
 // Applies a final result from a provider. Idempotent: repeated callbacks are ignored,
 // and a success always wins over an earlier failure because money has moved.
-export async function applyPaymentResult(paymentId, { success, reason, receipt, amount, raw }) {
+// Once committed, the customer is emailed about a new payment or a failed attempt.
+export async function applyPaymentResult(paymentId, result) {
+  const outcome = await recordPaymentResult(paymentId, result);
+  if (outcome?.email) queueOrderEmail(outcome.orderId, outcome.email);
+  return outcome;
+}
+
+async function recordPaymentResult(paymentId, { success, code, reason, receipt, amount, raw }) {
   return withTransaction(async (client) => {
     const { rows: [payment] } = await client.query('SELECT * FROM payments WHERE id = $1 FOR UPDATE', [paymentId]);
     if (!payment || payment.status === 'success') return;
@@ -132,26 +144,28 @@ export async function applyPaymentResult(paymentId, { success, reason, receipt, 
 
     if (success && amount !== undefined && amount < payment.amount) {
       await client.query(
-        `UPDATE payments SET status = 'failed', receipt = $2, failure_reason = $3, raw = COALESCE($4, raw), updated_at = now() WHERE id = $1`,
+        `UPDATE payments SET status = 'failed', receipt = $2, failure_reason = $3, failure_code = 'underpaid', raw = COALESCE($4, raw), updated_at = now() WHERE id = $1`,
         [payment.id, receipt ?? null, `Underpaid: received KES ${amount} of KES ${payment.amount}`, rawJson],
       );
-      if (order.status === 'pending_payment' && order.payment_status !== 'paid') {
+      const awaiting = order.status === 'pending_payment' && order.payment_status !== 'paid';
+      if (awaiting) {
         await client.query(`UPDATE orders SET payment_status = 'failed', updated_at = now() WHERE id = $1`, [order.id]);
       }
       await addEvent(client, order.id, 'payment_failed', `${label} payment of KES ${amount} is less than the order total. Needs manual review.`);
-      return;
+      return awaiting ? { orderId: order.id, email: 'payment_failed' } : null;
     }
 
     if (!success) {
       await client.query(
-        `UPDATE payments SET status = 'failed', failure_reason = $2, raw = COALESCE($3, raw), updated_at = now() WHERE id = $1`,
-        [payment.id, reason || 'Payment failed', rawJson],
+        `UPDATE payments SET status = 'failed', failure_reason = $2, failure_code = $3, raw = COALESCE($4, raw), updated_at = now() WHERE id = $1`,
+        [payment.id, reason || 'Payment failed', code ?? null, rawJson],
       );
       if (order.status === 'pending_payment' && order.payment_status !== 'paid') {
         await client.query(`UPDATE orders SET payment_status = 'failed', updated_at = now() WHERE id = $1`, [order.id]);
-        await addEvent(client, order.id, 'payment_failed', `${label} payment was not completed: ${reason || 'failed'}.`);
+        await addEvent(client, order.id, 'payment_failed', `${label} payment not completed: ${describeFailure(code, reason).title}.`);
+        return { orderId: order.id, email: 'payment_failed' };
       }
-      return;
+      return null;
     }
 
     await client.query(
@@ -161,7 +175,7 @@ export async function applyPaymentResult(paymentId, { success, reason, receipt, 
     const receiptNote = receipt ? ` (receipt ${receipt})` : '';
     if (order.payment_status === 'paid') {
       await addEvent(client, order.id, order.status, `Duplicate ${label} payment received${receiptNote}. Refund required.`);
-      return;
+      return null;
     }
     await client.query(
       `UPDATE orders SET payment_status = 'paid', paid_at = now(), updated_at = now(),
@@ -175,6 +189,7 @@ export async function applyPaymentResult(paymentId, { success, reason, receipt, 
     await addEvent(client, order.id, order.status === 'cancelled' ? 'cancelled' : 'confirmed', order.status === 'cancelled'
       ? `${label} payment received${receiptNote} after the order was cancelled. Refund or reinstate it.`
       : receivedNote);
+    return order.status === 'cancelled' ? null : { orderId: order.id, email: 'payment_received' };
   });
 }
 
@@ -234,7 +249,7 @@ export async function refreshPendingPayments(order, { force = false } = {}) {
     if (result.state === 'success') {
       await applyPaymentResult(payment.id, { success: true, amount: result.amount, receipt: payment.provider === 'paystack' ? payment.reference : undefined, raw: result.raw });
     } else if (result.state === 'failed') {
-      await applyPaymentResult(payment.id, { success: false, reason: result.reason, raw: result.raw });
+      await applyPaymentResult(payment.id, { success: false, code: result.code, reason: result.reason, raw: result.raw });
     }
   }
 }

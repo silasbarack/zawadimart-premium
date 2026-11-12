@@ -45,7 +45,7 @@ export const orderSummaryOut = (row) => ({
   createdAt: row.created_at,
 });
 
-export const orderOut = (order, items, events, { includeCustomer = true } = {}) => ({
+export const orderOut = (order, items, events, { includeCustomer = true, payment = null, emails = [] } = {}) => ({
   orderNumber: order.order_number,
   status: order.status,
   paymentStatus: order.payment_status,
@@ -69,5 +69,9 @@ export const orderOut = (order, items, events, { includeCustomer = true } = {}) 
   currency: order.currency,
   createdAt: order.created_at,
   paidAt: order.paid_at,
+  // Latest payment, with a plain-language failure reason when it didn't go through.
+  payment,
+  // Emails sent about this order (kind: order_confirmed, payment_received, payment_failed, order_cancelled).
+  emails: emails.map((email) => ({ kind: email.kind, status: email.status, ...(includeCustomer ? { to: email.recipient } : {}), sentAt: email.sent_at })),
   events: events.map((event) => ({ status: event.status, note: event.note, createdAt: event.created_at })),
 });

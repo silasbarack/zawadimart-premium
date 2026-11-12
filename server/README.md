@@ -51,6 +51,25 @@ While M-Pesa is in sandbox mode:
 
 To go live, switch to your production shortcode, passkey and keys with `MPESA_ENV=production`.
 
+### Order and payment emails
+
+With SMTP set up (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`), customers get an email with the ZawadiMart logo:
+
+| When | Email |
+| --- | --- |
+| A cash on delivery order is placed | Order confirmed, with the amount to have ready |
+| An M-Pesa or card payment is received | Payment received, with the M-Pesa receipt number |
+| A payment fails | Payment not completed, with the reason and what to do next |
+| An order is cancelled (by the customer, by staff, or unpaid in time) | Order cancelled, with the reason |
+
+Each kind of email is sent at most once per order, after the change is saved, so repeated M-Pesa callbacks never send duplicates. Every send is recorded in `order_emails`; a failed send is logged there with the error and is retried the next time that email is triggered. The logo is attached inline (`cid:`), so it shows even when the mail app blocks remote images. Without SMTP, emails are skipped and the startup log says so.
+
+For Gmail, use `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465` and an App Password (Google Account, Security, App passwords) as `SMTP_PASS`.
+
+### Payment failure reasons
+
+M-Pesa result codes (and card and timeout failures) are translated into plain words in `src/services/payment-reasons.js`. The order and payment-status endpoints return them as `failure: { code, title, detail, action }`, which the storefront shows on the order page.
+
 Other useful commands:
 
 ```bash

@@ -5,6 +5,7 @@ import { AppError, notFound } from '../errors.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { adminProductOut, categoryOut, orderSummaryOut, userOut } from '../serializers.js';
 import { expireStaleOrders } from '../services/jobs.js';
+import { CANCEL_REASONS, queueOrderEmail } from '../services/notifications.js';
 import { addEvent, cancelOrder, findOrder, lockOrder, orderDetails } from '../services/orders.js';
 import { clearable, id, optional } from '../validation.js';
 import { listProducts, productListQuery } from './catalog.js';
@@ -257,7 +258,7 @@ router.patch('/orders/:orderNumber', async (req, res) => {
   const found = await findOrder(req.params.orderNumber);
   if (!found) throw notFound('Order');
 
-  await withTransaction(async (client) => {
+  const cancelledNote = await withTransaction(async (client) => {
     let order = await lockOrder(client, found.id);
 
     if (input.paymentStatus === 'paid' && order.payment_status !== 'paid') {
@@ -279,7 +280,7 @@ router.patch('/orders/:orderNumber', async (req, res) => {
       }
       if (input.status === 'cancelled') {
         await cancelOrder(client, order, input.note || STATUS_NOTES.cancelled);
-        return;
+        return input.note || STATUS_NOTES.cancelled;
       }
       // Cash on delivery is collected when the order is delivered.
       const collectCash = input.status === 'delivered' && order.payment_method === 'cod' && order.payment_status !== 'paid';
@@ -293,6 +294,7 @@ router.patch('/orders/:orderNumber', async (req, res) => {
     }
   });
 
+  if (cancelledNote) queueOrderEmail(found.id, 'order_cancelled', { reason: CANCEL_REASONS.admin(input.note) });
   res.json({ order: await adminOrderView(await findOrder(found.order_number)) });
 });
 

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Banknote, ChevronLeft, ChevronRight, CircleAlert, CircleCheck, CircleUserRound, Clock3, Heart, Home,
   LayoutGrid, LogOut, Menu, Minus, PackageCheck, Plus, Search, ShieldCheck,
@@ -11,28 +11,35 @@ import { money, products } from './data';
 import { api, errorText, loadSession, saveSession } from './api';
 import { useCatalog } from './catalog';
 
+// True when the shopper has asked their system for less motion.
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const scrollToTop = () => window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+
+// Moves keyboard focus past the header to the page's <main>, without changing the URL.
+const skipToMain = (event) => {
+  const main = document.querySelector('main');
+  if (!main) return;
+  event.preventDefault();
+  main.setAttribute('tabindex', '-1');
+  main.focus({ preventScroll: true });
+  main.scrollIntoView({ block: 'start' });
+};
+
 // Loaded only when an admin opens /admin, so shoppers never download it.
 const AdminPage = lazy(() => import('./admin'));
+import brandLogo from './assets/brand/logo.png';
+import brandIcon from './assets/brand/icon.png';
 import mpesaLogo from './assets/payments/mpesa.svg';
 import visaLogo from './assets/payments/visa.svg';
 import mastercardLogo from './assets/payments/mastercard.svg';
 
 const discount = (p) => Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
 
-function BrandLogo({ compact=false }) {
-  return (
-    <span className={`brand-logo ${compact ? 'compact' : ''}`}>
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <rect x="4" y="7" width="40" height="36" rx="11" fill="#109b59"/>
-        <path d="M15 19.2h18l-1.4 15.4H16.4L15 19.2Z" fill="#fff"/>
-        <path d="M19 19.2c0-4.2 2-6.7 5-6.7s5 2.5 5 6.7" fill="none" stroke="#fff" strokeWidth="2.7" strokeLinecap="round"/>
-        <path d="M19.1 24.2h10.4l-7.8 7.5h8.1" fill="none" stroke="#109b59" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="38.2" cy="11.2" r="4.6" fill="#f6b73c"/>
-        <path d="M38.2 8.8v4.8M35.8 11.2h4.8" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-      <span className="brand-wordmark"><span className="brand-name">Zawadi<strong>Mart</strong></span><small>SHOP SMART · LIVE BETTER</small></span>
-    </span>
-  );
+// The ZawadiMart logo. iconOnly shows just the bag.
+function BrandLogo({ compact=false, iconOnly=false }) {
+  if (iconOnly) return <img className="brand-icon" src={brandIcon} alt="ZawadiMart" width="144" height="144" decoding="async"/>;
+  return <img className={`brand-logo ${compact ? 'compact' : ''}`} src={brandLogo} alt="ZawadiMart" width="507" height="150" decoding="async"/>;
 }
 
 const PAYMENT_BRANDS = {
@@ -77,7 +84,7 @@ function MobileRetailBars() {
     <div className="mobile-retail-bars">
       <div className="app-download-bar">
         <div className="container app-download-inner">
-          <span className="app-icon"><BrandLogo compact /></span>
+          <span className="app-icon"><BrandLogo iconOnly /></span>
           <span className="app-copy"><b>Shop on the ZawadiMart App</b><small>Fast browsing, easy checkout & fresh deals</small></span>
           <Link to="/shop">Open</Link>
         </div>
@@ -169,7 +176,7 @@ function App() {
     },500);
     return () => clearTimeout(timer);
   },[cart,cartSynced,token]);
-  useEffect(()=>{ setMenuOpen(false); window.scrollTo({top:0,behavior:'smooth'}); },[location.pathname]);
+  useEffect(()=>{ setMenuOpen(false); scrollToTop(); },[location.pathname]);
   useEffect(()=>{
     if (!productLoading) return;
     const previousOverflow = document.body.style.overflow;
@@ -246,7 +253,8 @@ function App() {
 
   return (
     <div className="app-shell">
-      {toast && <div className="toast"><CircleCheck size={16}/>{toast}</div>}
+      <a className="skip-link" href="#main" onClick={skipToMain}>Skip to main content</a>
+      {toast &&<div className="toast"><CircleCheck size={16}/>{toast}</div>}
       {productLoading && <ProductLoadingOverlay product={productLoading}/>}
       <Header cartCount={cartCount} menuOpen={menuOpen} setMenuOpen={setMenuOpen}/>
       <Routes>
@@ -290,16 +298,35 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
   const location=useLocation();
   const [q,setQ]=useState('');
   const submit=(e)=>{e.preventDefault();navigate(q.trim()?'/shop?q='+encodeURIComponent(q.trim()):'/shop');};
+  const menuButton=useRef(null), drawerPanel=useRef(null), drawerClose=useRef(null);
+  // Closing with Escape, the close button or the backdrop hands focus back to the menu button.
+  const closeMenu=()=>{ setMenuOpen(false); menuButton.current?.focus(); };
+  useEffect(()=>{
+    if(!menuOpen) return;
+    drawerClose.current?.focus({preventScroll:true});
+    const onKey=(e)=>{
+      if(e.key==='Escape'){ e.preventDefault(); closeMenu(); return; }
+      if(e.key!=='Tab') return;
+      // Keep Tab cycling inside the open drawer.
+      const items=[...drawerPanel.current.querySelectorAll('a[href],button:not([disabled])')];
+      const first=items[0], last=items[items.length-1], current=document.activeElement;
+      if(!drawerPanel.current.contains(current)){ e.preventDefault(); first.focus(); }
+      else if(e.shiftKey&&current===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey&&current===last){ e.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown',onKey);
+    return ()=>document.removeEventListener('keydown',onKey);
+  },[menuOpen]);
   return (
     <>
       <div className="top-strip"><div className="container">Sell on ZawadiMart · Track your order · Help Centre · Prices in KES</div></div>
       <MobileRetailBars/>
       <header className="site-header">
         <div className="container header-main">
-          <button className="menu-btn" onClick={()=>setMenuOpen(true)}><Menu/></button>
+          <button ref={menuButton} className="menu-btn" onClick={()=>setMenuOpen(true)} aria-label="Open menu" aria-expanded={menuOpen}><Menu aria-hidden="true"/></button>
           <Link to="/" className="brand"><BrandLogo/></Link>
           <div className="header-search-stack">
-            <form className="search-box" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/><button>Search</button></form>
+            <form className="search-box" onSubmit={submit} role="search"><Search aria-hidden="true"/><input aria-label="Search products" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/><button>Search</button></form>
             <div className="header-payment-row" aria-label="Accepted payment methods">
               <span className="header-payment-label">Pay securely with</span>
               <PaymentMarks compact withLabel={false}/>
@@ -310,7 +337,7 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
         </div>
         <div className="container mobile-search-row">
           <div className="mobile-search-stack">
-            <form className="search-box mobile-search" onSubmit={submit}><Search/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/></form>
+            <form className="search-box mobile-search" onSubmit={submit} role="search"><Search aria-hidden="true"/><input aria-label="Search products" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search products, brands and categories"/></form>
             <div className="mobile-payment-row" aria-label="Accepted payment methods">
               <span>Pay securely with</span>
               <PaymentMarks compact withLabel={false}/>
@@ -326,10 +353,12 @@ function Header({cartCount,menuOpen,setMenuOpen}) {
           <Link className="deal-link" to="/deals">Deals</Link>
         </div>
       </nav>
-      <div className={`drawer ${menuOpen?'open':''}`}>
-        <button className="drawer-bg" onClick={()=>setMenuOpen(false)} />
-        <aside>
-          <div className="drawer-head"><BrandLogo compact/><button onClick={()=>setMenuOpen(false)}><X/></button></div>
+      {/* While closed the drawer only slides off screen, so inert keeps its links out of the tab order. */}
+      <div className={`drawer ${menuOpen?'open':''}`} inert={menuOpen?undefined:''}>
+        <button className="drawer-bg" onClick={closeMenu} tabIndex={-1} aria-hidden="true" />
+        {/* A link to the page you're already on doesn't change the route, so close on any link click too. */}
+        <aside ref={drawerPanel} role="dialog" aria-modal="true" aria-label="Menu" onClick={e=>{ if(e.target.closest('a')) setMenuOpen(false); }}>
+          <div className="drawer-head"><BrandLogo compact/><button ref={drawerClose} onClick={closeMenu} aria-label="Close menu"><X aria-hidden="true"/></button></div>
           <Link to="/shop"><LayoutGrid/>All Categories</Link>
           {categories.map(c=><Link key={c.slug} to={'/category/'+c.slug}><span>{c.icon}</span>{c.name}</Link>)}
           <Link to="/deals"><Tag/>Deals & Offers</Link>
@@ -396,6 +425,8 @@ function PromoCarousel(){
   ];
 
   useEffect(()=>{
+    // Shoppers who ask for less motion move the slides themselves with the dots.
+    if(prefersReducedMotion()) return;
     const timer=window.setInterval(()=>setActive(i=>(i+1)%slides.length),4800);
     return ()=>window.clearInterval(timer);
   },[]);
@@ -419,7 +450,7 @@ function PromoCarousel(){
           onTouchEnd={onTouchEnd}
         >
           {slides.map((slide,index)=>(
-            <article className={`ad-slide people-ad ${slide.tone}`} key={slide.title} aria-hidden={active!==index}>
+            <article className={`ad-slide people-ad ${slide.tone}`} key={slide.title} aria-hidden={active!==index} inert={active!==index?'':undefined}>
               <div className="people-photo">
                 <img src={slide.person} alt={slide.personAlt} loading={index === 0 ? "eager" : "lazy"} />
                 <div className="people-photo-shade"/>
@@ -557,8 +588,30 @@ function DealSection({title,tone,items,addToCart,wishlist,toggleWishlist,openPro
       <div className="deal-title-wrap"><h2>{title}</h2>{flash&&<FlashCountdown/>}</div>
       <Link to={to} aria-label={'View '+title}><ChevronRight/></Link>
     </div>
-    <div className="deal-scroll">{items.map(p=><ProductCard key={p.id} product={p} addToCart={addToCart} wishlist={wishlist} toggleWishlist={toggleWishlist} openProduct={openProduct}/>)}</div>
+    <ScrollRow className="deal-scroll" label={title}>{items.map(p=><ProductCard key={p.id} product={p} addToCart={addToCart} wishlist={wishlist} toggleWishlist={toggleWishlist} openProduct={openProduct}/>)}</ScrollRow>
   </section>
+}
+
+// A sideways-scrolling row. The scrollbar is hidden, so on desktop with a mouse
+// (no trackpad or touch to swipe) arrows appear while there is more to see.
+// They are skipped by Tab: keyboard users reach every card by tabbing, which scrolls the row.
+function ScrollRow({className,label,children}){
+  const ref=useRef(null);
+  const [edges,setEdges]=useState({start:true,end:true});
+  useEffect(()=>{
+    const el=ref.current; if(!el) return;
+    const update=()=>setEdges({start:el.scrollLeft<=2,end:el.scrollLeft+el.clientWidth>=el.scrollWidth-2});
+    update();
+    el.addEventListener('scroll',update,{passive:true});
+    const observer=new ResizeObserver(update); observer.observe(el);
+    return ()=>{el.removeEventListener('scroll',update); observer.disconnect();};
+  },[]);
+  const page=(direction)=>{const el=ref.current; el.scrollBy({left:direction*el.clientWidth*0.85,behavior:prefersReducedMotion()?'auto':'smooth'});};
+  return <div className="scroll-row">
+    {!edges.start&&<button type="button" className="ad-arrow row-arrow prev" onClick={()=>page(-1)} tabIndex={-1} aria-label={'Scroll '+label+' back'}><ChevronLeft aria-hidden="true"/></button>}
+    <div className={className} ref={ref}>{children}</div>
+    {!edges.end&&<button type="button" className="ad-arrow row-arrow next" onClick={()=>page(1)} tabIndex={-1} aria-label={'Scroll '+label+' forward'}><ChevronRight aria-hidden="true"/></button>}
+  </div>;
 }
 
 function ProductCard({product,addToCart,wishlist,toggleWishlist,openProduct}){
@@ -575,7 +628,7 @@ function ProductCard({product,addToCart,wishlist,toggleWishlist,openProduct}){
       <div className="rating"><Star size={14} fill="currentColor"/>{product.rating} <span>({product.reviews})</span></div>
       <strong className="price">{money(product.price)}</strong>
       <div className="old-row"><del>{money(product.oldPrice)}</del><span>-{discount(product)}%</span></div>
-      <div className="card-actions"><button onClick={()=>addToCart(product.id)}>Add to cart</button><button className={wishlist.includes(product.id)?'wish active':'wish'} onClick={()=>toggleWishlist(product.id)}><Heart size={16} fill={wishlist.includes(product.id)?'currentColor':'none'}/></button></div>
+      <div className="card-actions"><button onClick={()=>addToCart(product.id)}>Add to cart</button><button className={wishlist.includes(product.id)?'wish active':'wish'} onClick={()=>toggleWishlist(product.id)} aria-label={'Save '+product.name+' to wishlist'} aria-pressed={wishlist.includes(product.id)}><Heart aria-hidden="true" size={16} fill={wishlist.includes(product.id)?'currentColor':'none'}/></button></div>
     </div>
   </article>
 }
@@ -605,7 +658,7 @@ function CategoryPage(props){
   const {products,getCategory,ready}=useCatalog();
   const {slug}=useParams(); const cat=getCategory(slug); if(!cat)return ready?<NotFound/>:<main className="container narrow"><div className="loader-ring" aria-label="Loading"><span/></div></main>;
   const items=products.filter(p=>p.category===slug);
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Shop','/shop'],[cat.name]]}/><div className="category-banner"><div><span>{cat.icon}</span><h1>{cat.name}</h1><p>Shop curated {cat.name.toLowerCase()} with realistic Kenyan pricing.</p></div><img src={cat.image}/></div><div className="catalog-grid">{items.map(p=><ProductCard key={p.id} product={p} {...props}/>)}</div></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Shop','/shop'],[cat.name]]}/><div className="category-banner"><div><span>{cat.icon}</span><h1>{cat.name}</h1><p>Shop curated {cat.name.toLowerCase()} with realistic Kenyan pricing.</p></div><img src={cat.image} alt=""/></div><div className="catalog-grid">{items.map(p=><ProductCard key={p.id} product={p} {...props}/>)}</div></main>
 }
 
 function DealsPage(props){
@@ -696,12 +749,12 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
     </main>;
   }
 
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,cat.slug?'/category/'+cat.slug:'/shop'],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p>{p.stock>0?<div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div>:<div className="in-stock out"><CircleAlert/>Out of stock</div>}<div className="detail-actions"><div className="qty"><button onClick={()=>setQty(Math.max(1,qty-1))}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))}><Plus/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)}><Heart fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,cat.slug?'/category/'+cat.slug:'/shop'],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p>{p.stock>0?<div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div>:<div className="in-stock out"><CircleAlert/>Out of stock</div>}<div className="detail-actions"><div className="qty" role="group" aria-label="Quantity"><button onClick={()=>setQty(Math.max(1,qty-1))} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)} aria-label="Save to wishlist" aria-pressed={wishlist.includes(p.id)}><Heart aria-hidden="true" fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
 }
 
 function CartPage({rows,subtotal,setQty,remove}){
   const delivery=subtotal>=10000?0:(subtotal?350:0);
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart']]}/><h1 className="page-title">Shopping Cart</h1>{!rows.length?<Empty icon={<ShoppingCart/>} title="Your cart is empty"/>:<div className="cart-layout"><div>{rows.map(({product,qty})=><div className="cart-row" key={product.id}><img src={product.image}/><div><h3>{product.name}</h3><strong>{money(product.price)}</strong></div><div className="cart-controls"><div className="qty"><button onClick={()=>setQty(product.id,qty-1)}><Minus/></button><span>{qty}</span><button onClick={()=>setQty(product.id,qty+1)}><Plus/></button></div><button onClick={()=>remove(product.id)}><Trash2/>Remove</button></div></div>)}</div><OrderSummary subtotal={subtotal} delivery={delivery} checkout/></div>}</main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart']]}/><h1 className="page-title">Shopping Cart</h1>{!rows.length?<Empty icon={<ShoppingCart/>} title="Your cart is empty"/>:<div className="cart-layout"><div>{rows.map(({product,qty})=><div className="cart-row" key={product.id}><img src={product.image} alt=""/><div><h3>{product.name}</h3><strong>{money(product.price)}</strong></div><div className="cart-controls"><div className="qty" role="group" aria-label={'Quantity of '+product.name}><button onClick={()=>setQty(product.id,qty-1)} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(product.id,qty+1)} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button onClick={()=>remove(product.id)}><Trash2/>Remove</button></div></div>)}</div><OrderSummary subtotal={subtotal} delivery={delivery} checkout/></div>}</main>
 }
 
 function OrderSummary({subtotal,delivery,checkout=false}){
@@ -738,7 +791,7 @@ function CheckoutPage({rows,subtotal,clearCart,user}){
     }catch(err){setError(errorText(err));setSubmitting(false);}
   };
   if(!rows.length)return <main className="container page-shell"><Empty icon={<ShoppingBag/>} title="No items to checkout"/></main>;
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]}/><div className="checkout-title"><h1>Checkout</h1><ShieldCheck/></div><form className="checkout-layout" onSubmit={submit}><div className="checkout-forms"><section className="form-card"><h2>Delivery Details</h2><div className="form-grid"><label>Full name<input name="fullName" defaultValue={user?.name||''} placeholder="e.g. Amina Wanjiku"/></label><label>Phone number<input name="phone" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label><label className="wide">Email{method==='card'?' (required for card payments)':''}<input name="email" type="email" defaultValue={user?.email||''} placeholder="you@example.com"/></label><label className="wide">Delivery address<input name="address" placeholder="Estate, street, building and house number"/></label><label>County<select name="county"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label><label>Town / area<input name="town" placeholder="e.g. Kilimani"/></label></div></section><section className="form-card"><div className="payment-heading-row"><h2>Payment Method</h2><PaymentMarks compact withLabel={false}/></div><div className="payment-tabs three"><button type="button" className={method==='mpesa'?'active':''} disabled={unavailable('mpesa')} onClick={()=>setMethod('mpesa')}><PaymentBrand brand="mpesa" compact/><span><b>M-Pesa{(mpesaTest||mpesaSandbox)&&<em className="test-tag">TEST</em>}</b><small>{unavailable('mpesa')?'Not available yet':mpesaTest?'Test mode: no money charged':mpesaSandbox?'Sandbox: test payments only':'Pay securely from your phone'}</small></span></button><button type="button" className={method==='card'?'active':''} disabled={unavailable('card')} onClick={()=>setMethod('card')}><span className="tab-card-logos"><PaymentBrand brand="visa" compact/><PaymentBrand brand="mastercard" compact/></span><span><b>Card</b><small>{unavailable('card')?'Not available yet':'Visa / Mastercard'}</small></span></button><button type="button" className={method==='cod'?'active':''} onClick={()=>setMethod('cod')}><span className="cod-mark"><Banknote/></span><span><b>Cash on Delivery</b><small>Pay when your order arrives</small></span></button></div>{method==='mpesa'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="mpesa"/><span>{mpesaTest?'Test mode':mpesaSandbox?'STK Push · Sandbox':'STK Push'}</span></div>{mpesaSandbox&&<div className="test-mode-note"><b>Test mode (Safaricom sandbox)</b> You will get a real M-Pesa prompt on this phone, but it comes from Safaricom's test system. These are test payments while the store is being set up, not real purchases.</div>}{mpesaTest&&<div className="test-mode-note"><b>Test mode</b> M-Pesa payments are simulated while the store is being set up. No prompt is sent to your phone and no money is charged. Your order is confirmed automatically a few seconds after you place it.</div>}<label>M-Pesa phone number<input name="mpesa" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label>{!mpesaTest&&<p>After you place your order, an M-Pesa prompt will appear on this phone. Enter your PIN to pay.</p>}</div>}{method==='card'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="visa"/><PaymentBrand brand="mastercard"/><span>Secure hosted checkout</span></div><p>After you place your order you will be taken to our secure payment partner's page to enter your card details. ZawadiMart never sees or stores your card number.</p></div>}{method==='cod'&&<div className="payment-panel"><p>Pay in cash or M-Pesa to our rider when your order is delivered. Please have the exact amount ready.</p></div>}</section>{error&&<div className="error">{error}</div>}</div><div><aside className="checkout-items"><h2>Your Order</h2>{rows.map(({product,qty})=><div key={product.id}><img src={product.image}/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price*qty)}</strong></div>)}</aside><OrderSummary subtotal={subtotal} delivery={delivery}/><button className="place-order" disabled={submitting}>{submitting?'Placing order…':<>Place Order <ChevronRight/></>}</button></div></form></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]}/><div className="checkout-title"><h1>Checkout</h1><ShieldCheck/></div><form className="checkout-layout" onSubmit={submit}><div className="checkout-forms"><section className="form-card"><h2>Delivery Details</h2><div className="form-grid"><label>Full name<input name="fullName" defaultValue={user?.name||''} placeholder="e.g. Amina Wanjiku"/></label><label>Phone number<input name="phone" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label><label className="wide">Email{method==='card'?' (required for card payments)':''}<input name="email" type="email" defaultValue={user?.email||''} placeholder="you@example.com"/></label><label className="wide">Delivery address<input name="address" placeholder="Estate, street, building and house number"/></label><label>County<select name="county"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label><label>Town / area<input name="town" placeholder="e.g. Kilimani"/></label></div></section><section className="form-card"><div className="payment-heading-row"><h2>Payment Method</h2><PaymentMarks compact withLabel={false}/></div><div className="payment-tabs three"><button type="button" className={method==='mpesa'?'active':''} disabled={unavailable('mpesa')} onClick={()=>setMethod('mpesa')}><PaymentBrand brand="mpesa" compact/><span><b>M-Pesa{(mpesaTest||mpesaSandbox)&&<em className="test-tag">TEST</em>}</b><small>{unavailable('mpesa')?'Not available yet':mpesaTest?'Test mode: no money charged':mpesaSandbox?'Sandbox: test payments only':'Pay securely from your phone'}</small></span></button><button type="button" className={method==='card'?'active':''} disabled={unavailable('card')} onClick={()=>setMethod('card')}><span className="tab-card-logos"><PaymentBrand brand="visa" compact/><PaymentBrand brand="mastercard" compact/></span><span><b>Card</b><small>{unavailable('card')?'Not available yet':'Visa / Mastercard'}</small></span></button><button type="button" className={method==='cod'?'active':''} onClick={()=>setMethod('cod')}><span className="cod-mark"><Banknote/></span><span><b>Cash on Delivery</b><small>Pay when your order arrives</small></span></button></div>{method==='mpesa'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="mpesa"/><span>{mpesaTest?'Test mode':mpesaSandbox?'STK Push · Sandbox':'STK Push'}</span></div>{mpesaSandbox&&<div className="test-mode-note"><b>Test mode (Safaricom sandbox)</b> You will get a real M-Pesa prompt on this phone, but it comes from Safaricom's test system. These are test payments while the store is being set up, not real purchases.</div>}{mpesaTest&&<div className="test-mode-note"><b>Test mode</b> M-Pesa payments are simulated while the store is being set up. No prompt is sent to your phone and no money is charged. Your order is confirmed automatically a few seconds after you place it.</div>}<label>M-Pesa phone number<input name="mpesa" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label>{!mpesaTest&&<p>After you place your order, an M-Pesa prompt will appear on this phone. Enter your PIN to pay.</p>}</div>}{method==='card'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="visa"/><PaymentBrand brand="mastercard"/><span>Secure hosted checkout</span></div><p>After you place your order you will be taken to our secure payment partner's page to enter your card details. ZawadiMart never sees or stores your card number.</p></div>}{method==='cod'&&<div className="payment-panel"><p>Pay in cash or M-Pesa to our rider when your order is delivered. Please have the exact amount ready.</p></div>}</section>{error&&<div className="error">{error}</div>}</div><div><aside className="checkout-items"><h2>Your Order</h2>{rows.map(({product,qty})=><div key={product.id}><img src={product.image} alt=""/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price*qty)}</strong></div>)}</aside><OrderSummary subtotal={subtotal} delivery={delivery}/><button className="place-order" disabled={submitting}>{submitting?'Placing order…':<>Place Order <ChevronRight/></>}</button></div></form></main>
 }
 
 export const STATUS_LABELS={pending_payment:'Awaiting payment',confirmed:'Confirmed',processing:'Processing',shipped:'On the way',delivered:'Delivered',cancelled:'Cancelled',payment_failed:'Payment not completed'};
@@ -755,12 +808,14 @@ export function OrderDetails({order}){
   </section>;
 }
 
+// Where an order's payment stands. When a payment doesn't go through it says why and what
+// to do next; once paid it shows the receipt and where the confirmation email went.
 function OrderStatusPage(){
   const {orderNumber:param}=useParams(); const [params]=useSearchParams(); const location=useLocation();
   const number=param||params.get('order')||''; const key=params.get('key')||'';
   const [order,setOrder]=useState(location.state?.order||null);
   const [notice,setNotice]=useState(location.state?.payment?.message||'');
-  const [error,setError]=useState(''); const [paymentError,setPaymentError]=useState(''); const [busy,setBusy]=useState(false);
+  const [error,setError]=useState(''); const [failure,setFailure]=useState(location.state?.payment?.failure||null); const [busy,setBusy]=useState(false);
   const mpesaMode=usePaymentModes()?.mpesa?.mode;
   const mpesaTest=mpesaMode==='mock';
   const path='/orders/'+encodeURIComponent(number); const headers=key?{'X-Order-Key':key}:{};
@@ -768,14 +823,14 @@ function OrderStatusPage(){
   // Asks the API for the latest payment state (it checks with M-Pesa / Paystack if needed).
   const refresh=async()=>{
     const status=await api(path+'/payment-status',{headers});
-    setPaymentError(status.lastError||'');
+    setFailure(status.failure||null);
     setOrder((await api(path,{headers})).order);
     return status;
   };
 
   useEffect(()=>{
     if(!number)return;
-    api(path,{headers}).then((r)=>{setOrder(r.order); if(r.order.paymentStatus==='failed') refresh().catch(()=>{});}).catch((e)=>setError(errorText(e)));
+    api(path,{headers}).then((r)=>setOrder(r.order)).catch((e)=>setError(errorText(e)));
   },[number,key]);
 
   const awaiting=order?.status==='pending_payment'&&order?.paymentStatus==='pending';
@@ -788,13 +843,13 @@ function OrderStatusPage(){
   },[awaiting,number,key]);
 
   const retry=async(paymentMethod)=>{
-    setBusy(true); setPaymentError('');
+    setBusy(true); setFailure(null);
     try{
       const r=await api(path+'/pay',{method:'POST',headers,body:{paymentMethod}});
       if(r.payment.status==='redirect')return window.location.assign(r.payment.checkoutUrl);
       setOrder(r.order); setNotice(r.payment.message);
-      if(r.payment.status==='failed')setPaymentError(r.payment.message);
-    }catch(e){setPaymentError(errorText(e));}
+      if(r.payment.status==='failed')setFailure(r.payment.failure||{title:'Payment not completed',detail:r.payment.message});
+    }catch(e){setFailure({title:'The payment could not be started',detail:errorText(e)});}
     setBusy(false);
   };
 
@@ -802,16 +857,34 @@ function OrderStatusPage(){
   if(!order)return <main className="container narrow">{error?<><div className="error">{error}</div><p><Link className="primary" to="/track-order">Track an order</Link></p></>:<div className="loader-ring" aria-label="Loading order"><span/></div>}</main>;
 
   const failed=order.status==='pending_payment'&&order.paymentStatus==='failed';
-  const hero=order.status==='cancelled'?{tone:'cancelled',icon:<X/>,title:'Order cancelled',text:'This order has been cancelled. Any reserved items have been released.'}
-    :failed?{tone:'failed',icon:<CircleAlert/>,title:'Payment not completed',text:paymentError||'Your payment did not go through. You can try again below.'}
+  const payment=order.payment;
+  const reason=failure||payment?.failure||{title:'Payment not completed',detail:'Your payment did not go through.',action:'You can try again below.'};
+  const emailed=(...kinds)=>order.emails?.find((e)=>kinds.includes(e.kind)&&e.status!=='failed');
+  const emailLine=(email,what)=>email?.to?<>{what} <b>{email.to}</b>.</>:null;
+  const cancelNote=[...(order.events||[])].reverse().find((e)=>e.status==='cancelled')?.note;
+  const codDue=order.paymentMethod==='cod'&&order.paymentStatus!=='paid';
+
+  const hero=order.status==='cancelled'?{tone:'cancelled',icon:<X/>,title:'Order cancelled',
+      text:payment?.failure?.code==='expired'?payment.failure.detail:(cancelNote||'This order has been cancelled. Any reserved items have been released.'),
+      message:{tone:'neutral',lines:[order.paymentStatus==='paid'&&'You had already paid for this order, so our team will contact you about your refund.',emailLine(emailed('order_cancelled'),'We have emailed the details to')]}}
+    :failed?{tone:'failed',icon:<CircleAlert/>,title:reason.title,text:reason.detail,
+      message:{tone:'failed',lines:[reason.action&&<><b>What to do:</b> {reason.action}</>,emailLine(emailed('payment_failed'),'We have also emailed this to')]}}
     :awaiting&&order.paymentMethod==='mpesa'&&mpesaTest?{tone:'pending',icon:<Clock3/>,title:'Confirming test payment',text:'Test mode: no M-Pesa prompt is sent and no money is charged. Your order will be confirmed in a few seconds.'}
     :awaiting&&order.paymentMethod==='mpesa'&&mpesaMode==='sandbox'?{tone:'pending',icon:<Clock3/>,title:'Check your phone',text:'Enter your M-Pesa PIN on the prompt from Safaricom\'s test system. This is a test payment. This page updates automatically.'}
     :awaiting?{tone:'pending',icon:<Clock3/>,title:order.paymentMethod==='mpesa'?'Check your phone':'Confirming your payment',text:notice||(order.paymentMethod==='mpesa'?'Enter your M-Pesa PIN on the prompt sent to your phone. This page updates automatically.':'We are confirming your card payment. This page updates automatically.')}
     :order.status==='pending_payment'?{tone:'pending',icon:<Clock3/>,title:'Awaiting payment',text:'Complete payment to confirm your order.'}
-    :{tone:'confirmed',icon:<CircleCheck/>,title:order.paymentMethod==='cod'&&order.paymentStatus!=='paid'?'Order confirmed':'Thank you for your order',text:order.paymentMethod==='cod'&&order.paymentStatus!=='paid'?`Please have ${money(order.total)} ready when your order is delivered.`:'Your payment has been received and your order is confirmed.'};
+    :codDue?{tone:'confirmed',icon:<CircleCheck/>,title:'Order confirmed',text:`Please have ${money(order.total)} ready when your order is delivered.`,
+      message:{tone:'positive',lines:[emailLine(emailed('order_confirmed'),'A confirmation email is on its way to')]}}
+    :{tone:'confirmed',icon:<CircleCheck/>,title:'Payment received',text:'Thank you! Your payment went through and your order is confirmed.',
+      message:{tone:'positive',lines:[
+        payment?.status==='success'&&<><b>{money(payment.amount)}</b> paid{payment.receipt?<> · {payment.provider==='mpesa'?'M-Pesa receipt':'Reference'} <b>{payment.receipt}</b></>:null}</>,
+        payment?.test&&'This was a test payment while the store is being set up. No real money was charged.',
+        emailLine(emailed('payment_received'),'A confirmation email is on its way to')]}};
+  const messageLines=(hero.message?.lines||[]).filter(Boolean);
 
   return <main className="container narrow order-page">
-    <div className={`order-hero ${hero.tone}`}>{hero.icon}<h1>{hero.title}</h1><p>{hero.text}</p>
+    <div className={`order-hero ${hero.tone}`} aria-live="polite">{hero.icon}<h1>{hero.title}</h1><p>{hero.text}</p>
+      {messageLines.length>0&&<div className={`order-message ${hero.message.tone}`}>{messageLines.map((line,i)=><p key={i}>{line}</p>)}</div>}
       {awaiting&&<div className="loader-ring" aria-hidden="true"><span/></div>}
       {(failed||(order.status==='pending_payment'&&!awaiting))&&<div className="order-actions">
         <button className="primary" disabled={busy} onClick={()=>retry('mpesa')}>{busy?'Please wait…':'Send M-Pesa prompt again'}</button>
@@ -862,9 +935,9 @@ function NotFound(){return <main className="container narrow"><Empty icon={<span
 function InfoBlock(){return <section className="container info-block"><h2>ZawadiMart Kenya — Shopping Made Easier</h2><p>Explore a broad catalogue of products for everyday Kenyan life, including phones, electronics, appliances, computing, fashion, beauty, home essentials and more. ZawadiMart is designed as a realistic e-commerce shopping experience with transparent KES pricing, product categories, cart functionality and convenient checkout flows.</p></section>}
 
 function Footer(){return <footer>
-  <div className="back-top" onClick={()=>window.scrollTo({top:0,behavior:'smooth'})}>⌃<span>BACK TO TOP</span></div>
+  <button type="button" className="back-top" onClick={scrollToTop}><span className="back-top-arrow" aria-hidden="true">⌃</span><span>BACK TO TOP</span></button>
   <div className="container footer-grid">
-    <div><BrandLogo compact/><p>Modern online shopping for Kenya.</p></div>
+    <div><span className="footer-logo"><BrandLogo compact/></span><p>Modern online shopping for Kenya.</p></div>
     <div><h4>HELP</h4><Link to="/track-order">Track Order</Link><Link to="/account">My Account</Link><span>Shipping & Delivery</span><span>Returns</span></div>
     <div><h4>ABOUT</h4><Link to="/shop">Shop</Link><Link to="/deals">Deals</Link><span>Terms & Conditions</span><span>Privacy Notice</span></div>
     <div><h4>PAYMENTS</h4><span>M-PESA checkout</span><span>Visa checkout</span><span>Mastercard checkout</span><span>Cash on delivery</span></div>

@@ -60,6 +60,17 @@ services:
         sync: false
       - key: PAYSTACK_SECRET_KEY
         sync: false
+      # Order and payment emails. Leave SMTP_HOST unset to turn emails off.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD
