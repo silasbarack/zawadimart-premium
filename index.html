@@ -8,9 +8,83 @@
     <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="description" content="ZawadiMart premium Kenyan online shopping experience." />
+    <style>
+      /* Startup loader: shown by the browser straight away, before any JavaScript arrives. */
+      #boot{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:#fff;font-family:'Noto Sans',Arial,sans-serif;color:#242424;transition:opacity .35s ease,visibility .35s}
+      #boot.done{opacity:0;visibility:hidden}
+      #boot .boot-box{display:grid;justify-items:center;gap:14px;padding:24px;text-align:center}
+      #boot .boot-ring{position:relative;width:112px;height:112px}
+      #boot .boot-ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+      #boot .boot-track{fill:none;stroke:#f6dcdc;stroke-width:6}
+      #boot .boot-arc{fill:none;stroke:#cf0f12;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .25s linear}
+      #boot .boot-spin{fill:none;stroke:#ef7904;stroke-width:6;stroke-linecap:round;transform-origin:50% 50%;animation:boot-spin 1.1s linear infinite}
+      #boot img{position:absolute;inset:22px;width:68px;height:68px}
+      #boot .boot-text{margin:0;font-size:15px;font-weight:700;color:#444;min-height:22px}
+      #boot .boot-note{margin:0;max-width:280px;font-size:13.5px;line-height:1.5;color:#777;min-height:20px}
+      @keyframes boot-spin{to{transform:rotate(360deg)}}
+      @media (prefers-reduced-motion:reduce){#boot .boot-spin{animation-duration:3s}#boot .boot-arc{transition:none}}
+    </style>
     <title>ZawadiMart | Shop, Save, Get Rewarded</title>
   </head>
   <body>
+    <div id="boot" role="status" aria-live="polite">
+      <div class="boot-box">
+        <div class="boot-ring">
+          <svg viewBox="0 0 112 112" aria-hidden="true">
+            <circle class="boot-track" cx="56" cy="56" r="50"/>
+            <circle class="boot-arc" cx="56" cy="56" r="50" stroke-dasharray="314.16" stroke-dashoffset="282.74"/>
+            <circle class="boot-spin" cx="56" cy="56" r="50" stroke-dasharray="18 296.16"/>
+          </svg>
+          <img alt="" src="data:image/png;base64,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"/>
+        </div>
+        <p class="boot-text">Loading ZawadiMart…</p>
+        <p class="boot-note"></p>
+      </div>
+    </div>
+    <script>
+      // Fills the circle as the site really loads: the HTML (now), the app code
+      // (main.jsx), then live prices from the API (catalog.jsx). Between those steps
+      // it creeps forward slowly, so a slow connection shows as a slowly filling ring.
+      (function () {
+        var boot = document.getElementById('boot');
+        var arc = boot.querySelector('.boot-arc');
+        var text = boot.querySelector('.boot-text');
+        var note = boot.querySelector('.boot-note');
+        var LENGTH = 314.16, start = Date.now(), target = 0.1, shown = 0.1, stepAt = start, finished = false;
+        function draw() {
+          if (finished) return;
+          // Creep up to 22% past the last real step while waiting for the next one,
+          // and never move backwards.
+          var creep = 0.22 * (1 - Math.exp(-(Date.now() - stepAt) / 3000));
+          var goal = Math.min(0.96, target + creep);
+          shown = Math.max(shown, shown + (goal - shown) * 0.3);
+          arc.style.strokeDashoffset = String(LENGTH * (1 - shown));
+          var waited = Date.now() - start;
+          if (!navigator.onLine) note.textContent = "You're offline. We'll carry on as soon as you're connected.";
+          else if (waited > 6000) note.textContent = 'Your connection seems slow. Still loading…';
+          else note.textContent = '';
+          setTimeout(draw, 120);
+        }
+        window.__zmBoot = {
+          progress: function (value, label) {
+            if (value > target) { target = value; stepAt = Date.now(); }
+            if (label) text.textContent = label;
+          },
+          done: function () {
+            if (finished) return;
+            finished = true;
+            arc.style.strokeDashoffset = '0';
+            text.textContent = 'Ready';
+            setTimeout(function () {
+              boot.classList.add('done');
+              setTimeout(function () { boot.remove(); }, 400);
+            }, 180);
+          },
+          isDone: function () { return finished; },
+        };
+        draw();
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
