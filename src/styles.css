@@ -963,3 +963,29 @@ input,select{font-size:15px}
 .test-tag{margin-left:6px;padding:2px 6px;border-radius:4px;background:var(--cream);color:var(--orange-deep);font-size:12px;font-style:normal;font-weight:900;letter-spacing:.04em}
 .test-mode-note{margin-bottom:12px;padding:11px 12px;border:1px solid #f6d29b;border-radius:8px;background:var(--cream);color:#6b4a12;font-size:14px;line-height:1.5}
 .test-mode-note b{display:block;margin-bottom:2px;color:var(--orange-deep)}
+
+/* Keyboard focus: a dark-green ring with a white gap, so it shows on light and dark backgrounds alike */
+:where(a,button,input,select,textarea,summary,[tabindex]:not([tabindex="-1"])):focus-visible{outline:3px solid var(--green-dark);outline-offset:2px;box-shadow:0 0 0 2px #fff}
+/* The search box clips its children, so the ring goes on the box itself */
+.search-box:focus-within{outline:3px solid var(--green-dark);outline-offset:2px;box-shadow:0 0 0 2px #fff}
+.search-box input:focus-visible{outline:none;box-shadow:none}
+.search-box button:focus-visible{outline:3px solid #fff;outline-offset:-6px;box-shadow:none}
+/* These sit inside parents that clip their edges, so the ring is drawn just inside them instead */
+.product-img:focus-visible,.qty button:focus-visible{outline-offset:-3px;box-shadow:none}
+/* The filter chips scroll sideways; 5px of room (cancelled by the margins) keeps their ring visible without moving them */
+.filter-row{margin:-5px -5px 0;padding-top:5px;padding-inline:5px}
+/* Back to top is a real button now, so keyboards can reach it */
+.back-top{width:100%;border:0;color:inherit}.back-top .back-top-arrow{font-size:inherit}
+.back-top:focus-visible{outline:3px solid #fff;outline-offset:-6px;box-shadow:none}
+
+/* Less motion for shoppers who ask their system for it */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
+  /* Spinners keep turning, slowly, so shoppers can still tell the page is working */
+  .loader-ring,.product-loader-spinner{animation-duration:1.6s!important;animation-iteration-count:infinite!important}
+  /* The sliding bar and skeleton shimmer become a gentle fade instead of movement */
+  .loader-progress span{width:100%;transform:none;animation:loader-pulse 1.6s ease-in-out infinite!important}
+  .shimmer::after{display:none}
+}
+@keyframes loader-pulse{0%,100%{opacity:.35}50%{opacity:1}}
