@@ -1,5 +1,6 @@
 // HTML + plain-text emails about an order. Table layout and inline styles, because
-// that is what mail apps (Gmail, Outlook, phones) render reliably.
+// that is what mail apps (Gmail, Outlook, phones) render reliably. The logo (white
+// lettering) sits on a dark band, so it reads the same in light and dark mode.
 import { LOGO_CID } from './email.js';
 
 const BRAND = '#cf0f12';
@@ -101,7 +102,7 @@ export function renderOrderEmail(kind, ctx) {
 <tr><td align="center" style="padding:24px 12px">
   <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden">
     <tr><td style="height:6px;background:${BRAND};font-size:0;line-height:0">&nbsp;</td></tr>
-    <tr><td align="center" style="padding:28px 24px 6px">
+    <tr><td align="center" bgcolor="#161616" style="padding:24px 24px 22px;background:#161616">
       <img src="cid:${LOGO_CID}" width="250" alt="ZawadiMart" style="display:block;width:250px;max-width:75%;height:auto;border:0">
     </td></tr>
     <tr><td style="padding:18px 32px 4px">
