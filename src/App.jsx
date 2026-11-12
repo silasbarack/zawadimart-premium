@@ -28,26 +28,18 @@ const skipToMain = (event) => {
 
 // Loaded only when an admin opens /admin, so shoppers never download it.
 const AdminPage = lazy(() => import('./admin'));
+import brandLogo from './assets/brand/logo.png';
+import brandIcon from './assets/brand/icon.png';
 import mpesaLogo from './assets/payments/mpesa.svg';
 import visaLogo from './assets/payments/visa.svg';
 import mastercardLogo from './assets/payments/mastercard.svg';
 
 const discount = (p) => Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
 
-function BrandLogo({ compact=false }) {
-  return (
-    <span className={`brand-logo ${compact ? 'compact' : ''}`}>
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <rect x="4" y="7" width="40" height="36" rx="11" fill="#109b59"/>
-        <path d="M15 19.2h18l-1.4 15.4H16.4L15 19.2Z" fill="#fff"/>
-        <path d="M19 19.2c0-4.2 2-6.7 5-6.7s5 2.5 5 6.7" fill="none" stroke="#fff" strokeWidth="2.7" strokeLinecap="round"/>
-        <path d="M19.1 24.2h10.4l-7.8 7.5h8.1" fill="none" stroke="#109b59" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"/>
-        <circle cx="38.2" cy="11.2" r="4.6" fill="#f6b73c"/>
-        <path d="M38.2 8.8v4.8M35.8 11.2h4.8" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-      <span className="brand-wordmark"><span className="brand-name">Zawadi<strong>Mart</strong></span><small>SHOP SMART · LIVE BETTER</small></span>
-    </span>
-  );
+// The ZawadiMart logo. iconOnly shows just the bag.
+function BrandLogo({ compact=false, iconOnly=false }) {
+  if (iconOnly) return <img className="brand-icon" src={brandIcon} alt="ZawadiMart" width="144" height="144" decoding="async"/>;
+  return <img className={`brand-logo ${compact ? 'compact' : ''}`} src={brandLogo} alt="ZawadiMart" width="507" height="150" decoding="async"/>;
 }
 
 const PAYMENT_BRANDS = {
@@ -92,7 +84,7 @@ function MobileRetailBars() {
     <div className="mobile-retail-bars">
       <div className="app-download-bar">
         <div className="container app-download-inner">
-          <span className="app-icon"><BrandLogo compact /></span>
+          <span className="app-icon"><BrandLogo iconOnly /></span>
           <span className="app-copy"><b>Shop on the ZawadiMart App</b><small>Fast browsing, easy checkout & fresh deals</small></span>
           <Link to="/shop">Open</Link>
         </div>
@@ -816,12 +808,14 @@ export function OrderDetails({order}){
   </section>;
 }
 
+// Where an order's payment stands. When a payment doesn't go through it says why and what
+// to do next; once paid it shows the receipt and where the confirmation email went.
 function OrderStatusPage(){
   const {orderNumber:param}=useParams(); const [params]=useSearchParams(); const location=useLocation();
   const number=param||params.get('order')||''; const key=params.get('key')||'';
   const [order,setOrder]=useState(location.state?.order||null);
   const [notice,setNotice]=useState(location.state?.payment?.message||'');
-  const [error,setError]=useState(''); const [paymentError,setPaymentError]=useState(''); const [busy,setBusy]=useState(false);
+  const [error,setError]=useState(''); const [failure,setFailure]=useState(location.state?.payment?.failure||null); const [busy,setBusy]=useState(false);
   const mpesaMode=usePaymentModes()?.mpesa?.mode;
   const mpesaTest=mpesaMode==='mock';
   const path='/orders/'+encodeURIComponent(number); const headers=key?{'X-Order-Key':key}:{};
@@ -829,14 +823,14 @@ function OrderStatusPage(){
   // Asks the API for the latest payment state (it checks with M-Pesa / Paystack if needed).
   const refresh=async()=>{
     const status=await api(path+'/payment-status',{headers});
-    setPaymentError(status.lastError||'');
+    setFailure(status.failure||null);
     setOrder((await api(path,{headers})).order);
     return status;
   };
 
   useEffect(()=>{
     if(!number)return;
-    api(path,{headers}).then((r)=>{setOrder(r.order); if(r.order.paymentStatus==='failed') refresh().catch(()=>{});}).catch((e)=>setError(errorText(e)));
+    api(path,{headers}).then((r)=>setOrder(r.order)).catch((e)=>setError(errorText(e)));
   },[number,key]);
 
   const awaiting=order?.status==='pending_payment'&&order?.paymentStatus==='pending';
@@ -849,13 +843,13 @@ function OrderStatusPage(){
   },[awaiting,number,key]);
 
   const retry=async(paymentMethod)=>{
-    setBusy(true); setPaymentError('');
+    setBusy(true); setFailure(null);
     try{
       const r=await api(path+'/pay',{method:'POST',headers,body:{paymentMethod}});
       if(r.payment.status==='redirect')return window.location.assign(r.payment.checkoutUrl);
       setOrder(r.order); setNotice(r.payment.message);
-      if(r.payment.status==='failed')setPaymentError(r.payment.message);
-    }catch(e){setPaymentError(errorText(e));}
+      if(r.payment.status==='failed')setFailure(r.payment.failure||{title:'Payment not completed',detail:r.payment.message});
+    }catch(e){setFailure({title:'The payment could not be started',detail:errorText(e)});}
     setBusy(false);
   };
 
@@ -863,16 +857,34 @@ function OrderStatusPage(){
   if(!order)return <main className="container narrow">{error?<><div className="error">{error}</div><p><Link className="primary" to="/track-order">Track an order</Link></p></>:<div className="loader-ring" aria-label="Loading order"><span/></div>}</main>;
 
   const failed=order.status==='pending_payment'&&order.paymentStatus==='failed';
-  const hero=order.status==='cancelled'?{tone:'cancelled',icon:<X/>,title:'Order cancelled',text:'This order has been cancelled. Any reserved items have been released.'}
-    :failed?{tone:'failed',icon:<CircleAlert/>,title:'Payment not completed',text:paymentError||'Your payment did not go through. You can try again below.'}
+  const payment=order.payment;
+  const reason=failure||payment?.failure||{title:'Payment not completed',detail:'Your payment did not go through.',action:'You can try again below.'};
+  const emailed=(...kinds)=>order.emails?.find((e)=>kinds.includes(e.kind)&&e.status!=='failed');
+  const emailLine=(email,what)=>email?.to?<>{what} <b>{email.to}</b>.</>:null;
+  const cancelNote=[...(order.events||[])].reverse().find((e)=>e.status==='cancelled')?.note;
+  const codDue=order.paymentMethod==='cod'&&order.paymentStatus!=='paid';
+
+  const hero=order.status==='cancelled'?{tone:'cancelled',icon:<X/>,title:'Order cancelled',
+      text:payment?.failure?.code==='expired'?payment.failure.detail:(cancelNote||'This order has been cancelled. Any reserved items have been released.'),
+      message:{tone:'neutral',lines:[order.paymentStatus==='paid'&&'You had already paid for this order, so our team will contact you about your refund.',emailLine(emailed('order_cancelled'),'We have emailed the details to')]}}
+    :failed?{tone:'failed',icon:<CircleAlert/>,title:reason.title,text:reason.detail,
+      message:{tone:'failed',lines:[reason.action&&<><b>What to do:</b> {reason.action}</>,emailLine(emailed('payment_failed'),'We have also emailed this to')]}}
     :awaiting&&order.paymentMethod==='mpesa'&&mpesaTest?{tone:'pending',icon:<Clock3/>,title:'Confirming test payment',text:'Test mode: no M-Pesa prompt is sent and no money is charged. Your order will be confirmed in a few seconds.'}
     :awaiting&&order.paymentMethod==='mpesa'&&mpesaMode==='sandbox'?{tone:'pending',icon:<Clock3/>,title:'Check your phone',text:'Enter your M-Pesa PIN on the prompt from Safaricom\'s test system. This is a test payment. This page updates automatically.'}
     :awaiting?{tone:'pending',icon:<Clock3/>,title:order.paymentMethod==='mpesa'?'Check your phone':'Confirming your payment',text:notice||(order.paymentMethod==='mpesa'?'Enter your M-Pesa PIN on the prompt sent to your phone. This page updates automatically.':'We are confirming your card payment. This page updates automatically.')}
     :order.status==='pending_payment'?{tone:'pending',icon:<Clock3/>,title:'Awaiting payment',text:'Complete payment to confirm your order.'}
-    :{tone:'confirmed',icon:<CircleCheck/>,title:order.paymentMethod==='cod'&&order.paymentStatus!=='paid'?'Order confirmed':'Thank you for your order',text:order.paymentMethod==='cod'&&order.paymentStatus!=='paid'?`Please have ${money(order.total)} ready when your order is delivered.`:'Your payment has been received and your order is confirmed.'};
+    :codDue?{tone:'confirmed',icon:<CircleCheck/>,title:'Order confirmed',text:`Please have ${money(order.total)} ready when your order is delivered.`,
+      message:{tone:'positive',lines:[emailLine(emailed('order_confirmed'),'A confirmation email is on its way to')]}}
+    :{tone:'confirmed',icon:<CircleCheck/>,title:'Payment received',text:'Thank you! Your payment went through and your order is confirmed.',
+      message:{tone:'positive',lines:[
+        payment?.status==='success'&&<><b>{money(payment.amount)}</b> paid{payment.receipt?<> · {payment.provider==='mpesa'?'M-Pesa receipt':'Reference'} <b>{payment.receipt}</b></>:null}</>,
+        payment?.test&&'This was a test payment while the store is being set up. No real money was charged.',
+        emailLine(emailed('payment_received'),'A confirmation email is on its way to')]}};
+  const messageLines=(hero.message?.lines||[]).filter(Boolean);
 
   return <main className="container narrow order-page">
-    <div className={`order-hero ${hero.tone}`}>{hero.icon}<h1>{hero.title}</h1><p>{hero.text}</p>
+    <div className={`order-hero ${hero.tone}`} aria-live="polite">{hero.icon}<h1>{hero.title}</h1><p>{hero.text}</p>
+      {messageLines.length>0&&<div className={`order-message ${hero.message.tone}`}>{messageLines.map((line,i)=><p key={i}>{line}</p>)}</div>}
       {awaiting&&<div className="loader-ring" aria-hidden="true"><span/></div>}
       {(failed||(order.status==='pending_payment'&&!awaiting))&&<div className="order-actions">
         <button className="primary" disabled={busy} onClick={()=>retry('mpesa')}>{busy?'Please wait…':'Send M-Pesa prompt again'}</button>
@@ -925,7 +937,7 @@ function InfoBlock(){return <section className="container info-block"><h2>Zawadi
 function Footer(){return <footer>
   <button type="button" className="back-top" onClick={scrollToTop}><span className="back-top-arrow" aria-hidden="true">⌃</span><span>BACK TO TOP</span></button>
   <div className="container footer-grid">
-    <div><BrandLogo compact/><p>Modern online shopping for Kenya.</p></div>
+    <div><span className="footer-logo"><BrandLogo compact/></span><p>Modern online shopping for Kenya.</p></div>
     <div><h4>HELP</h4><Link to="/track-order">Track Order</Link><Link to="/account">My Account</Link><span>Shipping & Delivery</span><span>Returns</span></div>
     <div><h4>ABOUT</h4><Link to="/shop">Shop</Link><Link to="/deals">Deals</Link><span>Terms & Conditions</span><span>Privacy Notice</span></div>
     <div><h4>PAYMENTS</h4><span>M-PESA checkout</span><span>Visa checkout</span><span>Mastercard checkout</span><span>Cash on delivery</span></div>

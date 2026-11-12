@@ -8,6 +8,8 @@ import { orderSummaryOut } from '../serializers.js';
 import {
   canAccessOrder, cancelOrder, createOrder, findOrder, lockOrder, orderDetails,
 } from '../services/orders.js';
+import { CANCEL_REASONS, queueOrderEmail } from '../services/notifications.js';
+import { describeFailure } from '../services/payment-reasons.js';
 import { ensureGatewayAvailable, refreshPendingPayments, startPayment } from '../services/payments.js';
 import { normalizeKenyanPhone } from '../services/phone.js';
 import { cartItems, email, kenyanPhone, optional } from '../validation.js';
@@ -49,12 +51,13 @@ async function accessibleOrder(req) {
   return order;
 }
 
-const latestPaymentError = async (orderId) => {
+// The latest failed attempt, explained for the shopper: { code, title, detail, action }.
+const latestPaymentFailure = async (orderId) => {
   const { rows } = await query(
-    `SELECT failure_reason FROM payments WHERE order_id = $1 ORDER BY created_at DESC, id DESC LIMIT 1`,
+    `SELECT status, failure_code, failure_reason FROM payments WHERE order_id = $1 ORDER BY created_at DESC, id DESC LIMIT 1`,
     [orderId],
   );
-  return rows[0]?.failure_reason ?? null;
+  return rows[0]?.status === 'failed' ? describeFailure(rows[0].failure_code, rows[0].failure_reason) : null;
 };
 
 router.post('/', orderLimiter, async (req, res) => {
@@ -66,6 +69,7 @@ router.post('/', orderLimiter, async (req, res) => {
   ensureGatewayAvailable(input.paymentMethod);
 
   const order = await createOrder(input, req.user);
+  if (order.payment_method === 'cod') queueOrderEmail(order.id, 'order_confirmed');
   const payment = await startPayment(order, { mpesaPhone: input.mpesaPhone ?? input.customer.phone });
   res.status(201).json({
     order: await orderDetails(await findOrder(order.order_number)),
@@ -114,13 +118,15 @@ router.get('/:orderNumber/payment-status', async (req, res) => {
     await refreshPendingPayments(order);
     order = await findOrder(order.order_number);
   }
+  const failure = order.payment_status === 'failed' ? await latestPaymentFailure(order.id) : null;
   res.json({
     orderNumber: order.order_number,
     status: order.status,
     paymentStatus: order.payment_status,
     paymentMethod: order.payment_method,
     total: order.total,
-    lastError: order.payment_status === 'failed' ? await latestPaymentError(order.id) : null,
+    failure,
+    lastError: failure ? `${failure.title}. ${failure.detail}` : null,
   });
 });
 
@@ -153,6 +159,7 @@ router.post('/:orderNumber/cancel', async (req, res) => {
     }
     await cancelOrder(client, current, 'Cancelled by customer.');
   });
+  queueOrderEmail(order.id, 'order_cancelled', { reason: CANCEL_REASONS.customer() });
   res.json({ order: await orderDetails(await findOrder(order.order_number)) });
 });
 

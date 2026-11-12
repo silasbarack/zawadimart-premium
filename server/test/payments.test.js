@@ -80,7 +80,11 @@ describe('M-Pesa STK Push', () => {
 
     const status = await api().get(`/api/orders/${order.orderNumber}/payment-status`).set('X-Order-Key', accessKey).expect(200);
     assert.equal(status.body.paymentStatus, 'failed');
-    assert.equal(status.body.lastError, 'Request cancelled by user');
+    assert.equal(status.body.failure.title, 'You cancelled the payment');
+    assert.equal(status.body.failure.code, '1032');
+    assert.match(status.body.lastError, /^You cancelled the payment\. The M-Pesa prompt was cancelled/);
+    const detail = await api().get(`/api/orders/${order.orderNumber}?key=${accessKey}`).expect(200);
+    assert.equal(detail.body.order.payment.failure.action, 'Send the prompt again when you are ready to pay.');
 
     fetchMock.restore();
     fetchMock = mockFetch(darajaRoutes());

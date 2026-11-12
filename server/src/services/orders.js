@@ -2,6 +2,8 @@ import crypto from 'node:crypto';
 import { pool, query, withTransaction } from '../db/pool.js';
 import { AppError } from '../errors.js';
 import { orderOut, productOut } from '../serializers.js';
+import { isTestPayment } from './notifications.js';
+import { describeFailure } from './payment-reasons.js';
 import { totals } from './pricing.js';
 
 export function mergeItems(items) {
@@ -115,11 +117,27 @@ export async function findOrder(orderNumber) {
 }
 
 export async function orderDetails(order, options) {
-  const [items, events] = await Promise.all([
+  const [items, events, payments, emails] = await Promise.all([
     query('SELECT * FROM order_items WHERE order_id = $1 ORDER BY id', [order.id]),
     query('SELECT * FROM order_events WHERE order_id = $1 ORDER BY created_at, id', [order.id]),
+    // A successful payment if there is one, otherwise the latest attempt.
+    query(`SELECT * FROM payments WHERE order_id = $1 ORDER BY (status = 'success') DESC, created_at DESC, id DESC LIMIT 1`, [order.id]),
+    query('SELECT kind, status, recipient, sent_at FROM order_emails WHERE order_id = $1 ORDER BY created_at', [order.id]),
   ]);
-  return orderOut(order, items.rows, events.rows, options);
+  const [payment] = payments.rows;
+  return orderOut(order, items.rows, events.rows, {
+    ...options,
+    payment: payment && {
+      provider: payment.provider,
+      status: payment.status,
+      amount: payment.amount,
+      receipt: payment.receipt,
+      test: isTestPayment(payment),
+      failure: payment.status === 'failed' ? describeFailure(payment.failure_code, payment.failure_reason) : null,
+      updatedAt: payment.updated_at,
+    },
+    emails: emails.rows,
+  });
 }
 
 const safeEqual = (a, b) => {

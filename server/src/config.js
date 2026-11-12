@@ -50,6 +50,17 @@ export const config = {
     secretKey: env.PAYSTACK_SECRET_KEY || '',
     baseUrl: 'https://api.paystack.co',
   },
+  // Order and payment emails, sent over SMTP (Gmail, Brevo, Resend, Mailgun, ...).
+  // With no SMTP_HOST, emails are skipped and the store works as before.
+  email: {
+    host: env.SMTP_HOST || '',
+    port: int(env.SMTP_PORT, 587),
+    secure: bool(env.SMTP_SECURE, int(env.SMTP_PORT, 587) === 465),
+    user: env.SMTP_USER || '',
+    pass: env.SMTP_PASS || '',
+    from: env.MAIL_FROM || (env.SMTP_USER ? `ZawadiMart <${env.SMTP_USER}>` : ''),
+    replyTo: env.MAIL_REPLY_TO || '',
+  },
   admin: {
     email: env.ADMIN_EMAIL || '',
     password: env.ADMIN_PASSWORD || '',
@@ -76,6 +87,8 @@ export function configWarnings() {
   if (config.corsOrigins.every((origin) => origin.includes('localhost') || origin.includes('127.0.0.1'))) warnings.push('CORS_ORIGINS only lists localhost, so the live storefront cannot call the API.');
   if (config.mpesa.consumerKey && config.mpesa.env === 'sandbox') warnings.push('M-Pesa uses the Daraja sandbox: prompts are real but payments are test payments. Set MPESA_ENV=production with live keys to take real money.');
   if (config.mpesaMock && !(config.mpesa.consumerKey && config.mpesa.passkey)) warnings.push('MPESA_MOCK is on: M-Pesa orders are marked paid without any money being charged.');
+  if (!config.email.host) warnings.push('SMTP_HOST is not set, so order and payment emails are not sent.');
+  else if (!config.email.from) warnings.push('MAIL_FROM is not set, so order and payment emails cannot be sent.');
   if (config.frontendUrl.includes('localhost')) warnings.push('FRONTEND_URL points at localhost, so card payments will redirect customers to the wrong site.');
   return warnings;
 }

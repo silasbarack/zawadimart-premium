@@ -88,7 +88,7 @@ export async function stkQuery(checkoutRequestId) {
   const code = String(body.ResultCode);
   return code === '0'
     ? { state: 'success', raw: body }
-    : { state: 'failed', reason: body.ResultDesc || `M-Pesa result ${code}`, raw: body };
+    : { state: 'failed', code, reason: body.ResultDesc || `M-Pesa result ${code}`, raw: body };
 }
 
 export function parseStkCallback(payload) {
@@ -99,6 +99,7 @@ export function parseStkCallback(payload) {
     checkoutRequestId: callback.CheckoutRequestID,
     merchantRequestId: callback.MerchantRequestID,
     success: String(callback.ResultCode) === '0',
+    code: String(callback.ResultCode),
     reason: callback.ResultDesc,
     amount: items.Amount !== undefined ? Number(items.Amount) : undefined,
     receipt: items.MpesaReceiptNumber,

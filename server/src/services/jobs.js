@@ -1,5 +1,6 @@
 import { config } from '../config.js';
 import { query, withTransaction } from '../db/pool.js';
+import { CANCEL_REASONS, queueOrderEmail } from './notifications.js';
 import { cancelOrder, lockOrder } from './orders.js';
 import { refreshPendingPayments } from './payments.js';
 
@@ -17,14 +18,17 @@ export async function expireStaleOrders() {
       const current = await lockOrder(client, order.id);
       if (current.status !== 'pending_payment' || current.payment_status === 'paid') return false;
       await client.query(
-        `UPDATE payments SET status = 'failed', failure_reason = 'Payment window expired', updated_at = now()
+        `UPDATE payments SET status = 'failed', failure_reason = 'Payment window expired', failure_code = 'expired', updated_at = now()
          WHERE order_id = $1 AND status = 'pending'`,
         [order.id],
       );
       await cancelOrder(client, current, 'Cancelled automatically because payment was not completed in time.');
       return true;
     });
-    if (cancelled) expired += 1;
+    if (cancelled) {
+      expired += 1;
+      queueOrderEmail(order.id, 'order_cancelled', { reason: CANCEL_REASONS.expired() });
+    }
   }
   return expired;
 }

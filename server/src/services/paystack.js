@@ -36,7 +36,10 @@ export async function verifyTransaction(reference) {
   const { status, amount, currency, gateway_response: gatewayResponse } = body.data;
   const kes = currency === 'KES' ? amount / 100 : undefined;
   if (status === 'success') return { state: 'success', amount: kes, raw: body.data };
-  if (['failed', 'abandoned', 'reversed'].includes(status)) return { state: 'failed', reason: gatewayResponse || status, raw: body.data };
+  if (['failed', 'abandoned', 'reversed'].includes(status)) {
+    const code = status === 'failed' ? 'card_declined' : status === 'abandoned' ? 'card_abandoned' : 'card_reversed';
+    return { state: 'failed', code, reason: gatewayResponse || status, raw: body.data };
+  }
   return { state: 'pending', raw: body.data };
 }
 
