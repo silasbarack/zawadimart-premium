@@ -11,6 +11,7 @@ import { money, products } from './data';
 import { api, errorText, loadSession, saveSession } from './api';
 import { useCatalog } from './catalog';
 import { usePageScroll, usePageTitle } from './page';
+import { PageTransitions, usePageWork } from './page-loader';
 
 // True when the shopper has asked their system for less motion.
 const prefersReducedMotion = () =>
@@ -125,7 +126,7 @@ const KENYAN_PHONE = /^((\+?254)|0)?[17]\d{8}$/;
 // null until the API answers; if it can't be reached every method is shown as usual.
 function usePaymentModes() {
   const [modes,setModes] = useState(null);
-  useEffect(()=>{ api('/config').then((r)=>setModes(r.payments)).catch(()=>{}); },[]);
+  useEffect(()=>{ api('/config').then((r)=>setModes(r.payments)).catch(()=>setModes({})); },[]);
   return modes;
 }
 
@@ -136,7 +137,7 @@ const mergeCarts = (local, saved) => {
 };
 
 function App() {
-  const { getProduct } = useCatalog();
+  const { getProduct, getCategory, ready: catalogReady } = useCatalog();
   const [session,setSession] = useState(loadSession);
   const [cartSynced,setCartSynced] = useState(false);
   const [cart,setCart] = useState(() => {
@@ -145,7 +146,6 @@ function App() {
   const [wishlist,setWishlist] = useState([]);
   const [menuOpen,setMenuOpen] = useState(false);
   const [toast,setToast] = useState('');
-  const [productLoading,setProductLoading] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -179,12 +179,6 @@ function App() {
   },[cart,cartSynced,token]);
   usePageScroll();
   useEffect(()=>{ setMenuOpen(false); },[location.pathname]);
-  useEffect(()=>{
-    if (!productLoading) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = previousOverflow; };
-  },[productLoading]);
 
   const cartCount = cart.reduce((s,i)=>s+i.qty,0);
   const rows = cart.map(i=>({...i,product:getProduct(i.id)})).filter(i=>i.product);
@@ -214,34 +208,22 @@ function App() {
     if(token) (saved?api('/wishlist/'+id,{method:'DELETE'}):api('/wishlist',{method:'POST',body:{productId:id}})).catch(()=>{});
   };
 
-  // Opens a product once its photo has loaded, so the page appears complete. The overlay
-  // only shows if that takes more than a moment, so fast connections never see it flash.
-  const opening = useRef(false);
-  const openProduct = (product) => {
-    if (!product || opening.current) return;
-    opening.current = true;
-    let finished = false;
-    let shownAt = 0;
-    const showTimer = window.setTimeout(() => { shownAt = performance.now(); setProductLoading(product); }, 250);
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      window.clearTimeout(showTimer);
-      // Once the overlay is up, keep it for a beat so it doesn't flicker.
-      const wait = shownAt ? Math.max(0, 450 - (performance.now() - shownAt)) : 0;
-      window.setTimeout(() => {
-        navigate('/product/' + product.id);
-        opening.current = false;
-        window.setTimeout(() => setProductLoading(null), 120);
-      }, wait);
-    };
-    const image = new Image();
-    image.onload = finish;
-    image.onerror = finish;
-    image.src = product.image;
-    if (image.complete) finish();
-    // On a very slow connection, stop waiting: the page opens and the photo keeps loading there.
-    window.setTimeout(finish, 8000);
+  const openProduct = (product) => { if (product) navigate('/product/' + product.id); };
+
+  // What the page loader says while each page loads.
+  const pageLabel = (path) => {
+    const [, section, id] = path.split('/');
+    if (section === 'checkout') return 'Loading checkout…';
+    if (section === 'cart') return 'Loading your cart…';
+    if (section === 'product') { const p = getProduct(id); return p ? `Loading ${p.name}…` : 'Loading product…'; }
+    if (section === 'category') { const c = getCategory(id); return c ? `Loading ${c.name}…` : 'Loading category…'; }
+    if (section === 'shop') return 'Loading products…';
+    if (section === 'deals') return 'Loading today\'s deals…';
+    if (section === 'orders' || section === 'order-success') return 'Loading your order…';
+    if (section === 'track-order') return 'Loading order tracking…';
+    if (section === 'account') return 'Loading your account…';
+    if (section === 'admin') return 'Loading admin…';
+    return section ? 'Loading…' : 'Loading home…';
   };
 
   const shared={addToCart,wishlist,toggleWishlist,openProduct};
@@ -250,8 +232,8 @@ function App() {
     <div className="app-shell">
       <a className="skip-link" href="#main" onClick={skipToMain}>Skip to main content</a>
       {toast &&<div className="toast"><CircleCheck size={16}/>{toast}</div>}
-      {productLoading && <ProductLoadingOverlay product={productLoading}/>}
       <Header cartCount={cartCount} menuOpen={menuOpen} setMenuOpen={setMenuOpen}/>
+      <PageTransitions labelFor={pageLabel} ready={catalogReady}>
       <Routes>
         <Route path="/" element={<HomePage {...shared}/>}/>
         <Route path="/shop" element={<ShopPage {...shared}/>}/>
@@ -264,30 +246,18 @@ function App() {
         <Route path="/orders/:orderNumber" element={<OrderStatusPage/>}/>
         <Route path="/track-order" element={<TrackOrder/>}/>
         <Route path="/account" element={<AccountPage user={session?.user} signIn={signIn} signOut={signOut}/>}/>
-        <Route path="/admin" element={<Suspense fallback={<main className="container narrow"><div className="loader-ring" aria-label="Loading"><span/></div></main>}><AdminPage user={session?.user}/></Suspense>}/>
+        <Route path="/admin" element={<Suspense fallback={<PageWorkPending/>}><AdminPage user={session?.user}/></Suspense>}/>
         <Route path="*" element={<NotFound/>}/>
       </Routes>
+      </PageTransitions>
       <Footer/>
       <MobileNav cartCount={cartCount}/>
     </div>
   );
 }
 
-function ProductLoadingOverlay({ product }) {
-  const [slow, setSlow] = useState(false);
-  useEffect(() => { const timer = setTimeout(() => setSlow(true), 3000); return () => clearTimeout(timer); }, []);
-  return (
-    <div className="product-loading-overlay" role="status" aria-live="polite" aria-label={'Loading ' + product.name}>
-      <div className="product-loader-card">
-        <div className="product-loader-logo"><BrandLogo /></div>
-        <div className="product-loader-spinner" aria-hidden="true" />
-        <strong>Loading product</strong>
-        <span>{product.name}</span>
-        <small>{slow ? 'Your connection seems slow. Still loading the photos…' : 'Preparing product details…'}</small>
-      </div>
-    </div>
-  );
-}
+// Stands in for a page whose code is still downloading, holding the page loader open.
+function PageWorkPending(){ usePageWork(true); return <main className="container narrow"/>; }
 
 function Header({cartCount,menuOpen,setMenuOpen}) {
   const {categories}=useCatalog();
@@ -679,12 +649,22 @@ function DealsPage(props){
 function ProductPage({addToCart,wishlist,toggleWishlist}){
   const {getProduct,getCategory,ready}=useCatalog();
   const {id}=useParams();
-  const p=getProduct(id);
+  // Fetch this product's current price and stock as the page opens, like a real shop page.
+  const [live,setLive]=useState(null); const [fetching,setFetching]=useState(true);
+  useEffect(()=>{
+    let cancelled=false; setLive(null); setFetching(true);
+    api('/products/'+encodeURIComponent(id)).then((r)=>{ if(!cancelled) setLive(r); }).catch(()=>{}).finally(()=>{ if(!cancelled) setFetching(false); });
+    return ()=>{ cancelled=true; };
+  },[id]);
+  usePageWork(fetching&&navigator.onLine);
+  const base=getProduct(id);
+  const p=base?(live?{...base,...live}:base):live;
   usePageTitle(p?.name||'Product');
   const navigate=useNavigate();
   const [qty,setQty]=useState(1);
   const [loading,setLoading]=useState(true);
   const [offline,setOffline]=useState(!navigator.onLine);
+  usePageWork(loading&&!offline);
 
   useEffect(()=>{
     if(!p) return;
@@ -750,10 +730,34 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
   return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,cat.slug?'/category/'+cat.slug:'/shop'],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p>{p.stock>0?<div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div>:<div className="in-stock out"><CircleAlert/>Out of stock</div>}<div className="detail-actions"><div className="qty" role="group" aria-label="Quantity"><button onClick={()=>setQty(Math.max(1,qty-1))} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="buy-now" onClick={()=>{ if(addToCart(p.id,qty,{buyNow:true})) navigate('/checkout'); }}>Buy now</button><button className="heart" onClick={()=>toggleWishlist(p.id)} aria-label="Save to wishlist" aria-pressed={wishlist.includes(p.id)}><Heart aria-hidden="true" fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
 }
 
+// Asks the server for the cart's current prices, delivery fee and stock, the way a real
+// cart and checkout check before you pay. Returns { quote, loading }.
+function useLiveQuote(rows){
+  const key=rows.map((r)=>`${r.product.id}x${r.qty}`).join(',');
+  const [quote,setQuote]=useState(null);
+  const [loading,setLoading]=useState(rows.length>0);
+  useEffect(()=>{
+    if(!rows.length){ setQuote(null); setLoading(false); return undefined; }
+    let cancelled=false; setLoading(true);
+    api('/cart/quote',{method:'POST',body:{items:rows.map((r)=>({productId:r.product.id,quantity:r.qty}))}})
+      .then((q)=>{ if(!cancelled) setQuote(q); }).catch(()=>{}).finally(()=>{ if(!cancelled) setLoading(false); });
+    return ()=>{ cancelled=true; };
+  },[key]);
+  usePageWork(loading&&navigator.onLine);
+  return {quote,loading};
+}
+
+// Stock problems the server found in the cart (e.g. "Only 2 left").
+function StockNotice({issues,fixLink=false}){
+  if(!issues?.length) return null;
+  return <div className="stock-notice" role="alert"><b>Please check your cart</b><ul>{issues.map((issue)=><li key={issue.productId}>{issue.message}</li>)}</ul>{fixLink&&<Link to="/cart">Update your cart</Link>}</div>;
+}
+
 function CartPage({rows,subtotal,setQty,remove}){
   usePageTitle('Cart');
   const delivery=subtotal>=10000?0:(subtotal?350:0);
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart']]}/><h1 className="page-title">Shopping Cart</h1>{!rows.length?<Empty icon={<ShoppingCart/>} title="Your cart is empty"/>:<div className="cart-layout"><div>{rows.map(({product,qty})=><div className="cart-row" key={product.id}><img src={product.image} alt=""/><div><h3>{product.name}</h3><strong>{money(product.price)}</strong></div><div className="cart-controls"><div className="qty" role="group" aria-label={'Quantity of '+product.name}><button onClick={()=>setQty(product.id,qty-1)} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(product.id,qty+1)} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button onClick={()=>remove(product.id)}><Trash2/>Remove</button></div></div>)}</div><OrderSummary subtotal={subtotal} delivery={delivery} checkout/></div>}</main>
+  const {quote}=useLiveQuote(rows);
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart']]}/><h1 className="page-title">Shopping Cart</h1><StockNotice issues={quote?.issues}/>{!rows.length?<Empty icon={<ShoppingCart/>} title="Your cart is empty"/>:<div className="cart-layout"><div>{rows.map(({product,qty})=><div className="cart-row" key={product.id}><img src={product.image} alt=""/><div><h3>{product.name}</h3><strong>{money(product.price)}</strong></div><div className="cart-controls"><div className="qty" role="group" aria-label={'Quantity of '+product.name}><button onClick={()=>setQty(product.id,qty-1)} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(product.id,qty+1)} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button onClick={()=>remove(product.id)}><Trash2/>Remove</button></div></div>)}</div><OrderSummary subtotal={quote?.subtotal??subtotal} delivery={quote?.deliveryFee??delivery} checkout/></div>}</main>
 }
 
 function OrderSummary({subtotal,delivery,checkout=false}){
@@ -763,8 +767,10 @@ function OrderSummary({subtotal,delivery,checkout=false}){
 
 function CheckoutPage({rows,subtotal,clearCart,user}){
   usePageTitle('Checkout');
+  const {quote}=useLiveQuote(rows);
   const nav=useNavigate(); const [method,setMethod]=useState('mpesa'); const [error,setError]=useState(''); const [submitting,setSubmitting]=useState(false); const delivery=subtotal>=10000?0:(subtotal?350:0);
   const modes=usePaymentModes();
+  usePageWork(modes===null);
   const unavailable=(m)=>modes?.[m]?.available===false;
   const mpesaTest=modes?.mpesa?.mode==='mock';
   const mpesaSandbox=modes?.mpesa?.mode==='sandbox';
@@ -791,7 +797,7 @@ function CheckoutPage({rows,subtotal,clearCart,user}){
     }catch(err){setError(errorText(err));setSubmitting(false);}
   };
   if(!rows.length)return <main className="container page-shell"><Empty icon={<ShoppingBag/>} title="No items to checkout"/></main>;
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]}/><div className="checkout-title"><h1>Checkout</h1><ShieldCheck/></div><form className="checkout-layout" onSubmit={submit}><div className="checkout-forms"><section className="form-card"><h2>Delivery Details</h2><div className="form-grid"><label>Full name<input name="fullName" defaultValue={user?.name||''} placeholder="e.g. Amina Wanjiku"/></label><label>Phone number<input name="phone" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label><label className="wide">Email{method==='card'?' (required for card payments)':''}<input name="email" type="email" defaultValue={user?.email||''} placeholder="you@example.com"/></label><label className="wide">Delivery address<input name="address" placeholder="Estate, street, building and house number"/></label><label>County<select name="county"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label><label>Town / area<input name="town" placeholder="e.g. Kilimani"/></label></div></section><section className="form-card"><div className="payment-heading-row"><h2>Payment Method</h2><PaymentMarks compact withLabel={false}/></div><div className="payment-tabs three"><button type="button" className={method==='mpesa'?'active':''} disabled={unavailable('mpesa')} onClick={()=>setMethod('mpesa')}><PaymentBrand brand="mpesa" compact/><span><b>M-Pesa{(mpesaTest||mpesaSandbox)&&<em className="test-tag">TEST</em>}</b><small>{unavailable('mpesa')?'Not available yet':mpesaTest?'Test mode: no money charged':mpesaSandbox?'Sandbox: test payments only':'Pay securely from your phone'}</small></span></button><button type="button" className={method==='card'?'active':''} disabled={unavailable('card')} onClick={()=>setMethod('card')}><span className="tab-card-logos"><PaymentBrand brand="visa" compact/><PaymentBrand brand="mastercard" compact/></span><span><b>Card</b><small>{unavailable('card')?'Not available yet':'Visa / Mastercard'}</small></span></button><button type="button" className={method==='cod'?'active':''} onClick={()=>setMethod('cod')}><span className="cod-mark"><Banknote/></span><span><b>Cash on Delivery</b><small>Pay when your order arrives</small></span></button></div>{method==='mpesa'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="mpesa"/><span>{mpesaTest?'Test mode':mpesaSandbox?'STK Push · Sandbox':'STK Push'}</span></div>{mpesaSandbox&&<div className="test-mode-note"><b>Test mode (Safaricom sandbox)</b> You will get a real M-Pesa prompt on this phone, but it comes from Safaricom's test system. These are test payments while the store is being set up, not real purchases.</div>}{mpesaTest&&<div className="test-mode-note"><b>Test mode</b> M-Pesa payments are simulated while the store is being set up. No prompt is sent to your phone and no money is charged. Your order is confirmed automatically a few seconds after you place it.</div>}<label>M-Pesa phone number<input name="mpesa" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label>{!mpesaTest&&<p>After you place your order, an M-Pesa prompt will appear on this phone. Enter your PIN to pay.</p>}</div>}{method==='card'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="visa"/><PaymentBrand brand="mastercard"/><span>Secure hosted checkout</span></div><p>After you place your order you will be taken to our secure payment partner's page to enter your card details. ZawadiMart never sees or stores your card number.</p></div>}{method==='cod'&&<div className="payment-panel"><p>Pay in cash or M-Pesa to our rider when your order is delivered. Please have the exact amount ready.</p></div>}</section>{error&&<div className="error">{error}</div>}</div><div><aside className="checkout-items"><h2>Your Order</h2>{rows.map(({product,qty})=><div key={product.id}><img src={product.image} alt=""/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price*qty)}</strong></div>)}</aside><OrderSummary subtotal={subtotal} delivery={delivery}/><button className="place-order" disabled={submitting}>{submitting?'Placing order…':<>Place Order <ChevronRight/></>}</button></div></form></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart','/cart'],['Checkout']]}/><StockNotice issues={quote?.issues} fixLink/><div className="checkout-title"><h1>Checkout</h1><ShieldCheck/></div><form className="checkout-layout" onSubmit={submit}><div className="checkout-forms"><section className="form-card"><h2>Delivery Details</h2><div className="form-grid"><label>Full name<input name="fullName" defaultValue={user?.name||''} placeholder="e.g. Amina Wanjiku"/></label><label>Phone number<input name="phone" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label><label className="wide">Email{method==='card'?' (required for card payments)':''}<input name="email" type="email" defaultValue={user?.email||''} placeholder="you@example.com"/></label><label className="wide">Delivery address<input name="address" placeholder="Estate, street, building and house number"/></label><label>County<select name="county"><option>Nairobi</option><option>Kiambu</option><option>Machakos</option><option>Kajiado</option><option>Mombasa</option><option>Nakuru</option><option>Kisumu</option></select></label><label>Town / area<input name="town" placeholder="e.g. Kilimani"/></label></div></section><section className="form-card"><div className="payment-heading-row"><h2>Payment Method</h2><PaymentMarks compact withLabel={false}/></div><div className="payment-tabs three"><button type="button" className={method==='mpesa'?'active':''} disabled={unavailable('mpesa')} onClick={()=>setMethod('mpesa')}><PaymentBrand brand="mpesa" compact/><span><b>M-Pesa{(mpesaTest||mpesaSandbox)&&<em className="test-tag">TEST</em>}</b><small>{unavailable('mpesa')?'Not available yet':mpesaTest?'Test mode: no money charged':mpesaSandbox?'Sandbox: test payments only':'Pay securely from your phone'}</small></span></button><button type="button" className={method==='card'?'active':''} disabled={unavailable('card')} onClick={()=>setMethod('card')}><span className="tab-card-logos"><PaymentBrand brand="visa" compact/><PaymentBrand brand="mastercard" compact/></span><span><b>Card</b><small>{unavailable('card')?'Not available yet':'Visa / Mastercard'}</small></span></button><button type="button" className={method==='cod'?'active':''} onClick={()=>setMethod('cod')}><span className="cod-mark"><Banknote/></span><span><b>Cash on Delivery</b><small>Pay when your order arrives</small></span></button></div>{method==='mpesa'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="mpesa"/><span>{mpesaTest?'Test mode':mpesaSandbox?'STK Push · Sandbox':'STK Push'}</span></div>{mpesaSandbox&&<div className="test-mode-note"><b>Test mode (Safaricom sandbox)</b> You will get a real M-Pesa prompt on this phone, but it comes from Safaricom's test system. These are test payments while the store is being set up, not real purchases.</div>}{mpesaTest&&<div className="test-mode-note"><b>Test mode</b> M-Pesa payments are simulated while the store is being set up. No prompt is sent to your phone and no money is charged. Your order is confirmed automatically a few seconds after you place it.</div>}<label>M-Pesa phone number<input name="mpesa" defaultValue={user?.phone?'0'+user.phone.slice(3):''} placeholder="0712 345 678"/></label>{!mpesaTest&&<p>After you place your order, an M-Pesa prompt will appear on this phone. Enter your PIN to pay.</p>}</div>}{method==='card'&&<div className="payment-panel"><div className="checkout-brand-row"><PaymentBrand brand="visa"/><PaymentBrand brand="mastercard"/><span>Secure hosted checkout</span></div><p>After you place your order you will be taken to our secure payment partner's page to enter your card details. ZawadiMart never sees or stores your card number.</p></div>}{method==='cod'&&<div className="payment-panel"><p>Pay in cash or M-Pesa to our rider when your order is delivered. Please have the exact amount ready.</p></div>}</section>{error&&<div className="error">{error}</div>}</div><div><aside className="checkout-items"><h2>Your Order</h2>{rows.map(({product,qty})=><div key={product.id}><img src={product.image} alt=""/><span><b>{product.name}</b><small>Qty {qty}</small></span><strong>{money(product.price*qty)}</strong></div>)}</aside><OrderSummary subtotal={quote?.subtotal??subtotal} delivery={quote?.deliveryFee??delivery}/><button className="place-order" disabled={submitting}>{submitting?'Placing order…':<>Place Order <ChevronRight/></>}</button></div></form></main>
 }
 
 export const STATUS_LABELS={pending_payment:'Awaiting payment',confirmed:'Confirmed',processing:'Processing',shipped:'On the way',delivered:'Delivered',cancelled:'Cancelled',payment_failed:'Payment not completed'};
@@ -818,6 +824,7 @@ function OrderStatusPage(){
   const [notice,setNotice]=useState(location.state?.payment?.message||'');
   const [error,setError]=useState(''); const [failure,setFailure]=useState(location.state?.payment?.failure||null); const [busy,setBusy]=useState(false);
   const mpesaMode=usePaymentModes()?.mpesa?.mode;
+  usePageWork(Boolean(number)&&!order&&!error);
   const mpesaTest=mpesaMode==='mock';
   const path='/orders/'+encodeURIComponent(number); const headers=key?{'X-Order-Key':key}:{};
 
@@ -914,6 +921,7 @@ function AccountPage({user,signIn,signOut}){
   usePageTitle(user?'My account':'Sign in');
   const [mode,setMode]=useState('signin'); const [error,setError]=useState(''); const [busy,setBusy]=useState(false); const [orders,setOrders]=useState(null);
   useEffect(()=>{ if(user) api('/orders').then((r)=>setOrders(r.items)).catch(()=>setOrders([])); },[user?.id]);
+  usePageWork(Boolean(user)&&orders===null);
 
   const submit=async(e)=>{
     e.preventDefault(); const f=Object.fromEntries(new FormData(e.currentTarget));
