@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, PackageCheck, Plus, Search, ShieldCheck } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, errorText } from './api';
+import { usePageTitle } from './page';
 import { money } from './data';
 import { useCatalog } from './catalog';
 import {
@@ -75,6 +76,7 @@ function SearchBox({ value, onSearch, placeholder }) {
 }
 
 export default function AdminPage({ user }) {
+  usePageTitle('Admin');
   const [params, setParams] = useSearchParams();
   const tab = TABS.some(([key]) => key === params.get('tab')) ? params.get('tab') : 'overview';
   const go = (next) => setParams(next, { replace: false });

@@ -10,6 +10,7 @@ import {
 import { money, products } from './data';
 import { api, errorText, loadSession, saveSession } from './api';
 import { useCatalog } from './catalog';
+import { usePageScroll, usePageTitle } from './page';
 
 // True when the shopper has asked their system for less motion.
 const prefersReducedMotion = () =>
@@ -176,7 +177,8 @@ function App() {
     },500);
     return () => clearTimeout(timer);
   },[cart,cartSynced,token]);
-  useEffect(()=>{ setMenuOpen(false); scrollToTop(); },[location.pathname]);
+  usePageScroll();
+  useEffect(()=>{ setMenuOpen(false); },[location.pathname]);
   useEffect(()=>{
     if (!productLoading) return;
     const previousOverflow = document.body.style.overflow;
@@ -192,14 +194,18 @@ function App() {
     setToast(m); clearTimeout(window.__zmToast);
     window.__zmToast=setTimeout(()=>setToast(''),1800);
   };
-  const addToCart = (id,qty=1) => {
+  // Returns false when the item can't be added. buyNow makes sure the cart holds at least
+  // qty of the item (without adding it twice) and skips the "added" message.
+  const addToCart = (id,qty=1,{buyNow=false}={}) => {
     const p=getProduct(id);
-    if(!p||p.stock<=0) return notify('Sorry, this item is out of stock');
+    if(!p||p.stock<=0){ notify('Sorry, this item is out of stock'); return false; }
     setCart(c=>{
       const ex=c.find(i=>i.id===id);
-      return ex ? c.map(i=>i.id===id?{...i,qty:Math.min(i.qty+qty,p.stock)}:i) : [...c,{id,qty:Math.min(qty,p.stock)}];
+      const next=(current)=>Math.min(buyNow?Math.max(current,qty):current+qty,p.stock);
+      return ex ? c.map(i=>i.id===id?{...i,qty:next(i.qty)}:i) : [...c,{id,qty:Math.min(qty,p.stock)}];
     });
-    notify(`${p.name} added to cart`);
+    if(!buyNow) notify(`${p.name} added to cart`);
+    return true;
   };
   const setQty=(id,qty)=>setCart(c=>qty<=0?c.filter(i=>i.id!==id):c.map(i=>i.id===id?{...i,qty:Math.min(qty,getProduct(id).stock)}:i));
   const toggleWishlist=(id)=>{
@@ -541,6 +547,7 @@ function CategoryBubbles(){
 }
 
 function HomePage(props){
+  usePageTitle('');
   const {products}=useCatalog();
   const topSelling=[...products].sort((a,b)=>b.reviews-a.reviews).slice(0,10);
   const flash=[...products].sort((a,b)=>discount(b)-discount(a)).slice(0,10);
@@ -637,6 +644,7 @@ function ShopPage(props){
   const {products,categories}=useCatalog();
   const [params]=useSearchParams();
   const q=(params.get('q')||'').toLowerCase();
+  usePageTitle(q?`Search: ${params.get('q')}`:'Shop all products');
   const [cat,setCat]=useState('all');
   const [sort,setSort]=useState('featured');
   const list=useMemo(()=>{
@@ -656,12 +664,13 @@ function ShopPage(props){
 
 function CategoryPage(props){
   const {products,getCategory,ready}=useCatalog();
-  const {slug}=useParams(); const cat=getCategory(slug); if(!cat)return ready?<NotFound/>:<main className="container narrow"><div className="loader-ring" aria-label="Loading"><span/></div></main>;
+  const {slug}=useParams(); const cat=getCategory(slug); usePageTitle(cat?.name||'Category'); if(!cat)return ready?<NotFound/>:<main className="container narrow"><div className="loader-ring" aria-label="Loading"><span/></div></main>;
   const items=products.filter(p=>p.category===slug);
   return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Shop','/shop'],[cat.name]]}/><div className="category-banner"><div><span>{cat.icon}</span><h1>{cat.name}</h1><p>Shop curated {cat.name.toLowerCase()} with realistic Kenyan pricing.</p></div><img src={cat.image} alt=""/></div><div className="catalog-grid">{items.map(p=><ProductCard key={p.id} product={p} {...props}/>)}</div></main>
 }
 
 function DealsPage(props){
+  usePageTitle('Deals');
   const {products}=useCatalog();
   const items=[...products].sort((a,b)=>discount(b)-discount(a));
   return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Deals']]}/><div className="promo-banner"><span>LIMITED-TIME OFFERS</span><h1>Today's Best Deals</h1><p>Save across phones, TVs, appliances, fashion, beauty and more.</p></div><div className="catalog-grid">{items.map(p=><ProductCard key={p.id} product={p} {...props}/>)}</div></main>
@@ -671,6 +680,8 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
   const {getProduct,getCategory,ready}=useCatalog();
   const {id}=useParams();
   const p=getProduct(id);
+  usePageTitle(p?.name||'Product');
+  const navigate=useNavigate();
   const [qty,setQty]=useState(1);
   const [loading,setLoading]=useState(true);
   const [offline,setOffline]=useState(!navigator.onLine);
@@ -736,10 +747,11 @@ function ProductPage({addToCart,wishlist,toggleWishlist}){
     </main>;
   }
 
-  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,cat.slug?'/category/'+cat.slug:'/shop'],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p>{p.stock>0?<div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div>:<div className="in-stock out"><CircleAlert/>Out of stock</div>}<div className="detail-actions"><div className="qty" role="group" aria-label="Quantity"><button onClick={()=>setQty(Math.max(1,qty-1))} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="heart" onClick={()=>toggleWishlist(p.id)} aria-label="Save to wishlist" aria-pressed={wishlist.includes(p.id)}><Heart aria-hidden="true" fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
+  return <main className="container page-shell"><Breadcrumb items={[['Home','/'],[cat.name,cat.slug?'/category/'+cat.slug:'/shop'],[p.name]]}/><section className="product-detail"><div className="detail-image"><img src={p.image} alt={p.name}/><span>-{discount(p)}%</span></div><div className="detail-copy"><span className="eyebrow">{cat.name}</span><h1>{p.name}</h1><div className="rating"><Star size={16} fill="currentColor"/>{p.rating} <span>({p.reviews} reviews)</span></div><div className="detail-price">{money(p.price)} <del>{money(p.oldPrice)}</del></div><p>{p.description}</p>{p.stock>0?<div className="in-stock"><CircleCheck/>In stock — {p.stock} units available</div>:<div className="in-stock out"><CircleAlert/>Out of stock</div>}<div className="detail-actions"><div className="qty" role="group" aria-label="Quantity"><button onClick={()=>setQty(Math.max(1,qty-1))} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(Math.min(p.stock,qty+1))} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button className="buy" onClick={()=>addToCart(p.id,qty)}><ShoppingCart/>Add to Cart</button><button className="buy-now" onClick={()=>{ if(addToCart(p.id,qty,{buyNow:true})) navigate('/checkout'); }}>Buy now</button><button className="heart" onClick={()=>toggleWishlist(p.id)} aria-label="Save to wishlist" aria-pressed={wishlist.includes(p.id)}><Heart aria-hidden="true" fill={wishlist.includes(p.id)?'currentColor':'none'}/></button></div><div className="benefits"><span><Truck/><b>Delivery</b><small>Calculated at checkout</small></span><span><ShieldCheck/><b>Secure Checkout</b><small>M-Pesa & cards</small></span><span><PackageCheck/><b>Support</b><small>Order assistance</small></span></div><div className="detail-payment-marks"><span>Supported at checkout</span><PaymentMarks compact withLabel={false}/></div></div></section></main>
 }
 
 function CartPage({rows,subtotal,setQty,remove}){
+  usePageTitle('Cart');
   const delivery=subtotal>=10000?0:(subtotal?350:0);
   return <main className="container page-shell"><Breadcrumb items={[['Home','/'],['Cart']]}/><h1 className="page-title">Shopping Cart</h1>{!rows.length?<Empty icon={<ShoppingCart/>} title="Your cart is empty"/>:<div className="cart-layout"><div>{rows.map(({product,qty})=><div className="cart-row" key={product.id}><img src={product.image} alt=""/><div><h3>{product.name}</h3><strong>{money(product.price)}</strong></div><div className="cart-controls"><div className="qty" role="group" aria-label={'Quantity of '+product.name}><button onClick={()=>setQty(product.id,qty-1)} aria-label="Decrease quantity"><Minus aria-hidden="true"/></button><span aria-live="polite">{qty}</span><button onClick={()=>setQty(product.id,qty+1)} aria-label="Increase quantity"><Plus aria-hidden="true"/></button></div><button onClick={()=>remove(product.id)}><Trash2/>Remove</button></div></div>)}</div><OrderSummary subtotal={subtotal} delivery={delivery} checkout/></div>}</main>
 }
@@ -750,6 +762,7 @@ function OrderSummary({subtotal,delivery,checkout=false}){
 }
 
 function CheckoutPage({rows,subtotal,clearCart,user}){
+  usePageTitle('Checkout');
   const nav=useNavigate(); const [method,setMethod]=useState('mpesa'); const [error,setError]=useState(''); const [submitting,setSubmitting]=useState(false); const delivery=subtotal>=10000?0:(subtotal?350:0);
   const modes=usePaymentModes();
   const unavailable=(m)=>modes?.[m]?.available===false;
@@ -800,6 +813,7 @@ export function OrderDetails({order}){
 function OrderStatusPage(){
   const {orderNumber:param}=useParams(); const [params]=useSearchParams(); const location=useLocation();
   const number=param||params.get('order')||''; const key=params.get('key')||'';
+  usePageTitle(number?`Order ${number}`:'Order');
   const [order,setOrder]=useState(location.state?.order||null);
   const [notice,setNotice]=useState(location.state?.payment?.message||'');
   const [error,setError]=useState(''); const [failure,setFailure]=useState(location.state?.payment?.failure||null); const [busy,setBusy]=useState(false);
@@ -884,6 +898,7 @@ function OrderStatusPage(){
 }
 
 function TrackOrder(){
+  usePageTitle('Track your order');
   const [order,setOrder]=useState(null); const [error,setError]=useState(''); const [busy,setBusy]=useState(false);
   const submit=async(e)=>{
     e.preventDefault(); const f=new FormData(e.currentTarget);
@@ -896,6 +911,7 @@ function TrackOrder(){
 }
 
 function AccountPage({user,signIn,signOut}){
+  usePageTitle(user?'My account':'Sign in');
   const [mode,setMode]=useState('signin'); const [error,setError]=useState(''); const [busy,setBusy]=useState(false); const [orders,setOrders]=useState(null);
   useEffect(()=>{ if(user) api('/orders').then((r)=>setOrders(r.items)).catch(()=>setOrders([])); },[user?.id]);
 
@@ -917,7 +933,7 @@ function AccountPage({user,signIn,signOut}){
 }
 export function Empty({icon,title}){return <div className="empty">{icon}<h2>{title}</h2><p>Explore the store and find something you like.</p><Link to="/shop">Start Shopping</Link></div>}
 export function Breadcrumb({items}){return <nav className="breadcrumb">{items.map(([label,href],i)=><span key={label}>{i>0&&<ChevronRight size={12}/>} {href?<Link to={href}>{label}</Link>:<b>{label}</b>}</span>)}</nav>}
-function NotFound(){return <main className="container narrow"><Empty icon={<span className="big404">404</span>} title="Page not found"/></main>}
+function NotFound(){usePageTitle('Page not found');return <main className="container narrow"><Empty icon={<span className="big404">404</span>} title="Page not found"/></main>}
 
 function InfoBlock(){return <section className="container info-block"><h2>ZawadiMart Kenya — Shopping Made Easier</h2><p>Explore a broad catalogue of products for everyday Kenyan life, including phones, electronics, appliances, computing, fashion, beauty, home essentials and more. ZawadiMart is designed as a realistic e-commerce shopping experience with transparent KES pricing, product categories, cart functionality and convenient checkout flows.</p></section>}
 
