@@ -96,7 +96,7 @@ export function renderOrderEmail(kind, ctx) {
 
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(c.subject)}</title></head>
-<body style="margin:0;padding:0;background:#f3f3f3;font-family:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:${INK}">
+<body style="margin:0;padding:0;background:#f3f3f3;font-family:Calibri,Carlito,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:${INK}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(c.preheader)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f3f3">
 <tr><td align="center" style="padding:24px 12px">
