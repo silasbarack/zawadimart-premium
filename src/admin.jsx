@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, PackageCheck, Plus, Search, Shiel
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, errorText } from './api';
 import { usePageTitle } from './page';
+import { ButtonSpinner } from './button-spinner';
 import { money } from './data';
 import { useCatalog } from './catalog';
 import {
@@ -409,7 +410,7 @@ function ProductForm({ product, categories, onDone }) {
       </div>
       {error && <div className="error">{error}</div>}
       <div className="admin-actions">
-        <button className="primary" disabled={busy}>{busy ? 'Saving…' : isNew ? 'Add product' : 'Save changes'}</button>
+        <button className="primary" disabled={busy} aria-busy={busy}>{busy ? <ButtonSpinner label="Saving" /> : isNew ? 'Add product' : 'Save changes'}</button>
         <button type="button" className="admin-btn" onClick={() => onDone(false)}>Cancel</button>
       </div>
       <p className="admin-muted">Shoppers see changes the next time they load the store.</p>

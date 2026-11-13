@@ -1015,3 +1015,11 @@ img.is-loaded{animation:img-fade-in .3s ease-out}
 .stock-notice b{display:block;margin-bottom:2px}
 .stock-notice ul{margin:4px 0 0;padding-left:18px}
 .stock-notice a{display:inline-block;margin-top:6px;font-weight:800;color:var(--brand-deep);text-decoration:underline}
+
+/* Busy buttons (button-spinner.jsx): a white spinning circle with what is happening */
+.btn-busy{display:inline-flex;align-items:center;justify-content:center;gap:9px}
+.btn-spinner{flex:none;width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:btn-spin .7s linear infinite}
+@keyframes btn-spin{to{transform:rotate(360deg)}}
+/* A busy button keeps its colour so the spinner stays visible */
+button[aria-busy="true"]:disabled{opacity:1;cursor:progress}
+@media (prefers-reduced-motion:reduce){.btn-spinner{animation-duration:1.6s!important;animation-iteration-count:infinite!important}}
