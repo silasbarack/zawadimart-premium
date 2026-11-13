@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { CatalogProvider } from './catalog';
+import '@fontsource/carlito/latin-400.css';
+import '@fontsource/carlito/latin-700.css';
 import './styles.css';
 
 // The app code has arrived: move the startup circle on (see index.html).
