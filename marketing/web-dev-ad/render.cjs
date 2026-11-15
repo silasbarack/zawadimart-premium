@@ -24,7 +24,7 @@ const stillsOnly = process.argv.includes('--stills');
 
   if (stillsOnly) {
     fs.mkdirSync(path.join(DIR, 'stills'), { recursive: true });
-    for (const t of [1.0, 2.9, 5.5, 8.6, 10.0, 11.6, 13.2, 14.9, 16.5, 18.3, 21.2, 23.6, 26.0, 29.0]) {
+    for (const t of [0.6, 1.6, 2.6, 3.0, 4.6, 5.2, 7.5, 10.3, 11.0, 12.8, 14.5, 16.2, 17.9, 19.4, 21.4, 22.3, 24.0, 26.2, 28.3, 29.8]) {
       await page.evaluate((x) => window.AD.seek(x), t);
       await page.screenshot({ path: path.join(DIR, 'stills', `t${t.toFixed(1)}.png`) });
     }

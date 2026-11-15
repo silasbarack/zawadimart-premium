@@ -5,10 +5,10 @@ const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), '
 (async () => { const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
   await p.addInitScript((c) => { window.AD_CONFIG = c; }, config);
   await p.goto('file://' + path.join(__dirname, 'ad.html')); await p.evaluate(() => document.fonts.ready);
-  const times = { hook: 2.9, show: 8.5, pitch: 23.5, cta: 29 }; const out = [];
+  const times = { hook: 3.2, show: 9.0, pitch: 24.0, cta: 29.5 }; const out = [];
   for (const [id, t] of Object.entries(times)) { await p.evaluate((x) => window.AD.seek(x), t); out.push(...await p.evaluate((id) => {
     const r = []; document.querySelectorAll(`#${id} .center > *, #${id} .svc, #${id} .wa, #${id} .btn`).forEach((el) => { const b = el.getBoundingClientRect(); if (!b.width) return; const bad = b.left < 40 || b.right > 950 || b.top < 150 || b.bottom > 1540; r.push(`${id} text ${(el.id || el.className).toString().slice(0, 12).padEnd(12)} x ${Math.round(b.left)}-${Math.round(b.right)} y ${Math.round(b.top)}-${Math.round(b.bottom)}${bad ? '  <-- OUTSIDE SAFE AREA' : ''}`); }); return r; }, id)); }
-  for (let i = 0; i < config.features.length; i++) { const t = 9 + (i + 0.8) * (10 / config.features.length); await p.evaluate((x) => window.AD.seek(x), t);
+  for (let i = 0; i < config.features.length; i++) { const t = 9.5 + (i + 0.8) * (10.5 / config.features.length); await p.evaluate((x) => window.AD.seek(x), t);
     out.push(await p.evaluate((i) => { const el = document.getElementById('f' + i); const txt = el.querySelector('.fdetail').getBoundingClientRect(); const lab = el.querySelector('.flabel').getBoundingClientRect(); const dev = el.querySelector('.phone, .laptop').getBoundingClientRect();
       return `feature ${i + 1}: label y ${Math.round(lab.top)}-${Math.round(lab.bottom)} (x to ${Math.round(lab.right)}) detail to y ${Math.round(txt.bottom)} | device ${Math.round(dev.left)}-${Math.round(dev.right)} x ${Math.round(dev.top)}-${Math.round(dev.bottom)}${txt.bottom > dev.top - 10 ? '  <-- TEXT TOUCHES DEVICE' : ''}${lab.right > 950 ? '  <-- LABEL TOO WIDE' : ''}`; }, i)); }
   console.log(out.join('\n')); await b.close(); })();

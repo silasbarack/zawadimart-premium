@@ -4,6 +4,11 @@
   "portfolio": "baracksilasmungai.onrender.com",
   "role": "Freelance Website Developer · Kenya",
 
+  "brand": {
+    "logo": "assets/zawadimart-logo-white.png",
+    "slogan": "Shop • Save • Get Rewarded"
+  },
+
   "hook": {
     "question": "DO YOU OWN A BUSINESS?",
     "line": "Imagine Having a Professional Website Like This!"
@@ -18,12 +23,18 @@
   "featuresKicker": "Built-in features, all working",
   "responsiveNote": "Responsive on phones and computers",
   "features": [
-    { "label": "Online product catalogues", "detail": "Products, categories, prices and stock levels", "screen": "category.jpg", "device": "phone" },
-    { "label": "Search & filters", "detail": "Customers find what they want in seconds", "screen": "search.jpg", "device": "phone" },
-    { "label": "Shopping cart & checkout", "detail": "Prices and stock checked live before payment", "screen": "cart.jpg", "device": "phone" },
-    { "label": "M-PESA payment integration", "detail": "M-PESA STK Push prompt straight to the customer's phone", "screen": "checkout-mpesa.jpg", "device": "phone" },
-    { "label": "Customer accounts", "detail": "Sign-in with order history and delivery status", "screen": "account.jpg", "device": "phone" },
-    { "label": "Order management", "detail": "Admin dashboard for orders, products and customers", "screen": "admin-orders.jpg", "device": "laptop" }
+    { "label": "Online product catalogues", "detail": "Products, categories, prices and stock levels", "screen": "category.jpg", "device": "phone",
+      "actions": [{ "type": "tap", "at": 0.75, "x": 106, "y": 619 }] },
+    { "label": "Search & filters", "detail": "Customers find what they want in seconds", "screen": "search.jpg", "device": "phone",
+      "actions": [{ "type": "tap", "at": 0.45, "x": 222, "y": 189 }, { "type": "type", "at": 0.6, "text": "samsung", "x": 222, "y": 189, "w": 329, "h": 39 }] },
+    { "label": "Shopping cart & checkout", "detail": "Prices and stock checked live before payment", "screen": "cart.jpg", "device": "phone",
+      "actions": [{ "type": "tap", "at": 0.8, "x": 113, "y": 479 }] },
+    { "label": "M-PESA payment integration", "detail": "M-PESA STK Push prompt straight to the customer's phone", "screen": "checkout-mpesa.jpg", "device": "phone",
+      "actions": [{ "type": "tap", "at": 0.8, "x": 206, "y": 360 }] },
+    { "label": "Customer accounts", "detail": "Sign-in with order history and delivery status", "screen": "account.jpg", "device": "phone",
+      "actions": [{ "type": "tap", "at": 0.8, "x": 206, "y": 531 }] },
+    { "label": "Order management", "detail": "Admin dashboard for orders, products and customers", "screen": "admin-orders.jpg", "device": "laptop",
+      "actions": [{ "type": "click", "at": 0.9, "x": 567, "y": 466 }] }
   ],
 
   "pitch": {
