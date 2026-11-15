@@ -1,7 +1,8 @@
 # Web-development TikTok ad
 
-A 30-second, 1080×1920 ad that uses ZawadiMart as a portfolio piece to win website-development
-clients. Every screen in it is a real screenshot of the working site (`assets/screens/`).
+A 41-second, 1080×1920 ad on a plain white background that uses ZawadiMart as a portfolio piece to win website-development
+clients. Every screen in it is a real, full-length screenshot of the working site (`assets/screens/`),
+so the phone and laptop scroll, tap, click, type and change page like a real visit.
 
 ## Change the text, number or link
 
@@ -14,7 +15,8 @@ Edit `config.json`. Everything on screen comes from it:
 | `role` | The small label above the closing headline |
 | `hook`, `showcase`, `pitch`, `cta` | Headlines, points, services and the call to action |
 | `brand` | The logo and slogan shown in the opening clip |
-| `features` | The six feature cuts: label, one-line detail, screenshot, `phone` or `laptop` frame, and `actions` (taps, clicks or typing at a screenshot position, in CSS pixels of the screenshot) |
+| `pages` | The screenshots the devices can open, with each page's height in CSS pixels |
+| `features` | The six feature cuts: label, one-line detail, `phone` or `laptop`, and `steps`: `go` (open a page), `scroll` (to a position, over `dur` seconds), `tap`/`click` at `[x, y]` and `type` text into a `field`. Times (`at`) are seconds from the start of the cut; positions are in page CSS pixels |
 | `output` | The file name of the finished video |
 
 Keep feature labels to about 28 characters so they stay on one line.
@@ -26,7 +28,7 @@ ffmpeg, and Python 3 with numpy.
 
 ```bash
 node render.cjs --stills   # quick preview frames in stills/
-node render.cjs            # full video, about 8 minutes
+node render.cjs            # full video, about 11 minutes
 node safe-check.cjs        # QA: text inside TikTok's safe area, no text touching the screens
 node text-check.cjs        # QA: all on-screen text, exact WhatsApp number and portfolio address
 ```

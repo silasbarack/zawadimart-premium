@@ -13,6 +13,10 @@ import numpy as np
 SR = 44100
 cues_path, duration, out_path = sys.argv[1], float(sys.argv[2]), sys.argv[3]
 cues = json.load(open(cues_path))
+# Section times come from the video: the beat starts after the hook, the arpeggio runs under the features
+sec = {c['type']: c['t'] for c in cues if c['type'].startswith('music_')}
+BEAT = sec.get('music_beat', 3.5)
+ARP_ON, ARP_OFF = sec.get('music_arp_on', 9.5), sec.get('music_arp_off', 24.5)
 n = int(SR * duration)
 t_all = np.arange(n) / SR
 rng = np.random.default_rng(7)
@@ -86,7 +90,7 @@ k_t = np.arange(int(0.32 * SR)) / SR
 k_sig = np.sin(2 * np.pi * (45 * k_t + (120 - 45) * 0.06 * (1 - np.exp(-k_t / 0.06)))) * np.exp(-k_t / 0.11)
 for i_b in range(int(duration / beat) + 1):
     s = i_b * beat
-    if 3.5 <= s < duration - 1.6:
+    if BEAT <= s < duration - 1.6:
         i = int(s * SR)
         seg = k_sig[: n - i]
         kick[i:i + len(seg)] += seg
@@ -98,7 +102,7 @@ hats = np.zeros(n)
 h_len = int(0.05 * SR)
 for i_b in range(int(duration / beat) + 1):
     s = i_b * beat + beat / 2
-    if 3.5 <= s < duration - 1.6:
+    if BEAT <= s < duration - 1.6:
         noise = rng.standard_normal(h_len)
         noise = np.diff(noise, prepend=0)
         i = int(s * SR)
@@ -110,7 +114,7 @@ bass = np.zeros(n)
 for b in range(int(duration / bar) + 1):
     for off in (0, 2):
         s = b * bar + off * beat
-        if 3.5 <= s < duration - 1.2:
+        if BEAT <= s < duration - 1.2:
             tt = np.arange(int(beat * 1.6 * SR)) / SR
             f = note_hz(roots[b % 4])
             sig = (np.sin(2 * np.pi * f * tt) + 0.3 * np.sin(4 * np.pi * f * tt)) * np.exp(-tt / 0.35) * np.minimum(1, tt / 0.01)
@@ -121,7 +125,7 @@ for b in range(int(duration / bar) + 1):
 arp = np.zeros(n)
 for i_e in range(int(duration / (beat / 2)) + 1):
     s = i_e * beat / 2
-    if 9.5 <= s < 24.5:
+    if ARP_ON <= s < ARP_OFF:
         b = int(s / bar)
         m = chords[b % 4][i_e % 4] + 12
         tt = np.arange(int(0.3 * SR)) / SR
@@ -183,7 +187,7 @@ def riser(length):
     return w * (tt / length) ** 1.5
 
 
-place(fx, 1.5, riser(2.0), 0.22)
+place(fx, max(0, BEAT - 2.0), riser(2.0), 0.22)
 for c in cues:
     t0, kind = c['t'], c['type']
     if kind == 'whoosh':
@@ -203,10 +207,13 @@ for c in cues:
         place(fx, t0, click, 0.35)
     elif kind == 'tap':
         place(fx, t0, blip(520, 300, 0.09, 0.025), 0.3, pan=0.15)
-    elif kind == 'type':
-        for j in range(7):
-            k = rng.standard_normal(int(0.012 * SR)) * np.exp(-np.arange(int(0.012 * SR)) / SR / 0.002)
-            place(fx, t0 + j * 0.11, k, 0.16)
+    elif kind == 'key':
+        k = rng.standard_normal(int(0.012 * SR)) * np.exp(-np.arange(int(0.012 * SR)) / SR / 0.002)
+        place(fx, t0, k, 0.16)
+    elif kind == 'scroll':
+        place(fx, t0, whoosh(0.5, 400, 1600), 0.07, pan=-0.1)
+    elif kind == 'swipe':
+        place(fx, max(0, t0 - 0.05), whoosh(0.3, 1000, 5000), 0.12, pan=0.2)
 
 out = music * 0.75 + fx
 out /= max(1e-9, np.max(np.abs(out))) / 0.9
