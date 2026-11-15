@@ -1,0 +1,39 @@
+{
+  "output": "ZawadiMart_Web_Development_TikTok_Ad.mp4",
+  "whatsapp": "+254 117 561 192",
+  "portfolio": "baracksilasmungai.onrender.com",
+  "role": "Freelance Website Developer · Kenya",
+
+  "hook": {
+    "question": "DO YOU OWN A BUSINESS?",
+    "line": "Imagine Having a Professional Website Like This!"
+  },
+
+  "showcase": {
+    "badge": "Live project I built: ZawadiMart",
+    "title": "Professional E-commerce Websites",
+    "points": ["Modern Design", "Mobile Friendly", "Easy to Use"]
+  },
+
+  "featuresKicker": "Built-in features, all working",
+  "responsiveNote": "Responsive on phones and computers",
+  "features": [
+    { "label": "Online product catalogues", "detail": "Products, categories, prices and stock levels", "screen": "category.jpg", "device": "phone" },
+    { "label": "Search & filters", "detail": "Customers find what they want in seconds", "screen": "search.jpg", "device": "phone" },
+    { "label": "Shopping cart & checkout", "detail": "Prices and stock checked live before payment", "screen": "cart.jpg", "device": "phone" },
+    { "label": "M-PESA payment integration", "detail": "M-PESA STK Push prompt straight to the customer's phone", "screen": "checkout-mpesa.jpg", "device": "phone" },
+    { "label": "Customer accounts", "detail": "Sign-in with order history and delivery status", "screen": "account.jpg", "device": "phone" },
+    { "label": "Order management", "detail": "Admin dashboard for orders, products and customers", "screen": "admin-orders.jpg", "device": "laptop" }
+  ],
+
+  "pitch": {
+    "headline": "YOUR BUSINESS COULD HAVE A WEBSITE LIKE THIS!",
+    "services": ["Custom Website Development", "Payment Integration", "Maintenance & Technical Support"]
+  },
+
+  "cta": {
+    "headline": "LET'S BUILD YOUR BUSINESS WEBSITE!",
+    "sub": "Professional Websites Tailored to Your Business",
+    "button": "MESSAGE ME ON WHATSAPP TODAY!"
+  }
+}

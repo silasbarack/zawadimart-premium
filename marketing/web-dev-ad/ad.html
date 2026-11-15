@@ -1,0 +1,198 @@
+<!doctype html>
+<!--
+  Web-development TikTok ad, 1080x1920. Built entirely from config.json (injected by render.cjs as
+  window.AD_CONFIG) and real screenshots in assets/screens. Every animation is created paused;
+  render.cjs seeks to each frame's time and screenshots it. window.AD.cues lists the moments that
+  get a sound effect.
+-->
+<html><head><meta charset="utf-8"><style>
+@font-face{font-family:Roboto;src:url(assets/fonts/roboto-latin-400-normal.woff2) format('woff2');font-weight:400}
+@font-face{font-family:Roboto;src:url(assets/fonts/roboto-latin-500-normal.woff2) format('woff2');font-weight:500}
+@font-face{font-family:Roboto;src:url(assets/fonts/roboto-latin-700-normal.woff2) format('woff2');font-weight:700}
+@font-face{font-family:Roboto;src:url(assets/fonts/roboto-latin-900-normal.woff2) format('woff2');font-weight:900}
+:root{--blue:#3b82f6;--cyan:#22d3ee;--green:#25d366;--ink:#e8edf7;--muted:#a9b4c8}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#060a14;font-family:Roboto,Arial,sans-serif;color:#fff}
+/* Premium dark background: deep navy, soft moving light, a faint tech grid */
+#bg{position:absolute;inset:0;background:radial-gradient(1200px 900px at 50% 20%,#14224a 0%,#0a1124 55%,#060a14 100%)}
+#grid{position:absolute;inset:0;background-image:linear-gradient(rgba(120,160,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(120,160,255,.07) 1px,transparent 1px);background-size:72px 72px;-webkit-mask-image:radial-gradient(900px 1200px at 50% 45%,#000 30%,transparent 80%)}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55}
+#vignette{position:absolute;inset:0;background:radial-gradient(1300px 1700px at 50% 45%,transparent 60%,rgba(0,0,0,.55) 100%);pointer-events:none;z-index:50}
+.scene{position:absolute;inset:0;opacity:0}
+.center{position:absolute;left:50px;right:130px;text-align:center}
+.word{display:inline-block;margin-right:.24em}
+.grad{background:linear-gradient(90deg,#60a5fa,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent}
+.kicker{display:inline-block;padding:12px 24px;border-radius:999px;font-size:34px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#cfe3ff;background:rgba(59,130,246,.16);border:2px solid rgba(96,165,250,.45)}
+.chip{display:inline-block;margin:0 8px;padding:14px 26px;border-radius:999px;font-size:34px;font-weight:700;color:#fff;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.22)}
+/* Devices */
+.phone{position:absolute;border-radius:calc(var(--w) * .13);background:#05070c;padding:calc(var(--w) * .033);box-shadow:0 0 0 3px #2a3142,0 40px 80px rgba(0,0,0,.6),0 0 120px rgba(59,130,246,.25)}
+.phone .screen{position:relative;width:calc(var(--w) * .934);height:calc(var(--w) * .934 * 870 / 412);border-radius:calc(var(--w) * .1);overflow:hidden;background:#f3f3f3}
+.phone .screen::before{content:'';position:absolute;left:50%;top:calc(var(--w) * .05);width:calc(var(--w) * .2);height:calc(var(--w) * .055);margin-left:calc(var(--w) * -.1);border-radius:99px;background:#05070c;z-index:3}
+.laptop{position:absolute}
+.laptop .lid{border-radius:22px 22px 8px 8px;background:#0b0f18;padding:16px 16px 22px;box-shadow:0 0 0 3px #2a3142,0 40px 80px rgba(0,0,0,.6),0 0 140px rgba(59,130,246,.22)}
+.laptop .screen{position:relative;width:calc(var(--w) - 32px);height:calc((var(--w) - 32px) * 900 / 1440);overflow:hidden;background:#f3f3f3;border-radius:6px}
+.laptop .base{height:26px;margin:0 -46px;border-radius:0 0 26px 26px;background:linear-gradient(180deg,#3a4152,#1b202b);box-shadow:0 18px 30px rgba(0,0,0,.45)}
+.screen img{position:absolute;left:0;top:0;width:100%;display:block}
+/* Features */
+.fnum{display:inline-grid;place-items:center;width:84px;height:84px;margin-right:22px;border-radius:22px;background:linear-gradient(135deg,var(--blue),var(--cyan));font-size:40px;font-weight:900;vertical-align:middle}
+.flabel{display:inline-block;vertical-align:middle;font-size:58px;font-weight:900;letter-spacing:-1px;line-height:1.05;max-width:780px;text-align:left}
+.fdetail{margin-top:20px;font-size:35px;line-height:1.3;color:var(--ink);text-wrap:balance;max-width:860px}
+.dots{position:absolute;left:50px;right:130px;top:1425px;display:flex;justify-content:center;gap:16px}
+.dot{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.22)}
+.note{position:absolute;left:50px;right:130px;top:1468px;text-align:center}
+/* Pitch */
+.svc{display:flex;align-items:center;gap:24px;margin:0 0 22px 50px;width:830px;padding:22px 30px;border-radius:24px;background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.14);font-size:44px;font-weight:700;text-align:left}
+.check{flex:none;position:relative;width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan))}
+.check::after{content:'';position:absolute;left:21px;top:11px;width:15px;height:28px;border:solid #fff;border-width:0 7px 7px 0;transform:rotate(45deg)}
+/* Call to action */
+.wa{position:absolute;left:50px;width:850px;border-radius:40px;background:#fff;color:#0b1220;padding:40px 40px 44px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 0 6px rgba(37,211,102,.35)}
+.wa-top{display:flex;align-items:center;justify-content:center;gap:22px;font-size:46px;font-weight:700;color:#128c4a}
+.wa-top img{width:96px;height:96px}
+.wa-num{margin-top:18px;font-size:86px;font-weight:900;letter-spacing:1px;color:#0b1220;white-space:nowrap;font-variant-numeric:tabular-nums}
+.btn{display:inline-flex;align-items:center;gap:16px;padding:30px 40px;border-radius:999px;background:var(--green);color:#06301a;font-size:40px;font-weight:900;letter-spacing:.01em;box-shadow:0 20px 50px rgba(37,211,102,.35)}
+.btn img{width:56px;height:56px;filter:brightness(0) saturate(100%) invert(12%) sepia(40%) saturate(1800%) hue-rotate(110deg)}
+.portfolio{font-size:42px;font-weight:500;color:var(--ink)}
+.portfolio b{color:#7dd3fc;font-weight:700}
+.tap{position:absolute;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;background:rgba(255,255,255,.5);border:4px solid #fff;opacity:0}
+.ring{position:absolute;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;border:6px solid rgba(255,255,255,.8);opacity:0}
+.sweep{position:absolute;top:0;bottom:0;width:260px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);opacity:0;z-index:4}
+</style></head><body>
+<div id="bg"></div><div id="grid"></div>
+<div class="blob" id="b1" style="left:-200px;top:200px;width:800px;height:800px;background:#1d4ed8"></div>
+<div class="blob" id="b2" style="left:560px;top:1000px;width:700px;height:700px;background:#0891b2"></div>
+<div class="blob" id="b3" style="left:300px;top:-300px;width:600px;height:600px;background:#4f46e5;opacity:.35"></div>
+<div id="root"></div>
+<div id="vignette"></div>
+<script>
+const C = window.AD_CONFIG;
+const root = document.getElementById('root');
+const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const words = (t, cls = '') => esc(t).split(' ').map((w) => `<span class="word ${cls}">${w}</span>`).join('');
+const phone = (w, x, y, screen, extra = '') => `<div class="phone" style="--w:${w}px;left:${x}px;top:${y}px;${extra}"><div class="screen"><img src="assets/screens/${screen}" alt=""></div></div>`;
+const laptop = (w, x, y, screen, extra = '') => `<div class="laptop" style="--w:${w}px;width:${w}px;left:${x}px;top:${y}px;${extra}"><div class="lid"><div class="screen"><img src="assets/screens/${screen}" alt=""><div class="sweep"></div></div></div><div class="base"></div></div>`;
+const WA = 'assets/whatsapp.svg';
+
+// Timeline (seconds)
+const T = { hook: [0, 3], show: [3, 9], feat: [9, 19], pitch: [19, 24], cta: [24, 29.5] };
+const DURATION = 29.5;
+const scene = (id, html) => { const el = document.createElement('section'); el.className = 'scene'; el.id = id; el.innerHTML = html; root.appendChild(el); return el; };
+
+// 1. Hook
+scene('hook', `
+  <div class="center" style="top:300px"><div style="font-size:104px;font-weight:900;letter-spacing:-2px;line-height:1.02" id="q">${words(C.hook.question)}</div>
+    <div id="bar" style="margin:26px auto 0;height:12px;width:560px;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--cyan));transform-origin:left"></div></div>
+  <div class="center" style="top:560px"><div id="line" style="font-size:64px;font-weight:700;line-height:1.15;text-wrap:balance">${words(C.hook.line)}</div></div>
+  <div id="hookDevices">${laptop(800, 90, 860, 'desktop-home.jpg')}${phone(280, 660, 1000, 'home-top.jpg')}</div>`);
+
+// 2. Showcase
+scene('show', `
+  <div class="center" style="top:190px"><span class="kicker" id="badge">${esc(C.showcase.badge)}</span></div>
+  <div class="center" style="top:280px"><div id="stitle" style="font-size:86px;font-weight:900;letter-spacing:-1.5px;line-height:1.04;text-wrap:balance">${words(C.showcase.title)}</div></div>
+  <div class="center" style="top:500px" id="points">${C.showcase.points.map((p) => `<span class="chip">${esc(p)}</span>`).join('')}</div>
+  <div id="showDevices">${laptop(860, 60, 660, 'desktop-home-full.jpg')}${phone(290, 660, 900, 'home-full.jpg')}</div>`);
+
+// 3. Features: one cut per feature
+const FEAT = C.features; const cut = (T.feat[1] - T.feat[0]) / FEAT.length;
+scene('feat', `
+  <div class="center" style="top:190px"><span class="kicker">${esc(C.featuresKicker)}</span></div>
+  ${FEAT.map((f, i) => `<div class="fcut" id="f${i}" style="position:absolute;inset:0;opacity:0">
+     <div style="position:absolute;left:60px;right:130px;top:290px"><div><span class="fnum">${String(i + 1).padStart(2, '0')}</span><span class="flabel">${esc(f.label)}</span></div>
+       <div class="fdetail">${esc(f.detail)}</div></div>
+     ${f.device === 'laptop' ? laptop(860, 70, 660, f.screen) : phone(400, 300, 590, f.screen)}
+   </div>`).join('')}
+  <div class="dots">${FEAT.map((_, i) => `<i class="dot" id="d${i}"></i>`).join('')}</div>
+  <div class="note"><span class="chip" style="font-size:34px;padding:12px 24px">${esc(C.responsiveNote)}</span></div>`);
+
+// 4. Pitch
+scene('pitch', `
+  <div class="center" style="top:180px"><div id="ptitle" style="font-size:80px;font-weight:900;letter-spacing:-1px;line-height:1.05;text-wrap:balance">${words(C.pitch.headline)}</div></div>
+  <div id="collage">${laptop(700, 140, 520, 'admin-overview.jpg')}${phone(240, 40, 610, 'product.jpg', 'transform:rotate(-7deg)')}${phone(240, 700, 630, 'checkout-mpesa.jpg', 'transform:rotate(7deg)')}</div>
+  <div style="position:absolute;left:0;right:0;top:1140px">${C.pitch.services.map((s) => `<div class="svc"><span class="check"></span>${esc(s)}</div>`).join('')}</div>`);
+
+// 5. Call to action
+scene('cta', `
+  <div class="center" style="top:170px"><span class="kicker" id="role">${esc(C.role)}</span></div>
+  <div class="center" style="top:260px"><div id="ctitle" style="font-size:92px;font-weight:900;letter-spacing:-1.5px;line-height:1.03;text-wrap:balance">${words(C.cta.headline)}</div></div>
+  <div class="center" style="top:520px"><div id="csub" style="font-size:42px;color:var(--ink);text-wrap:balance">${esc(C.cta.sub)}</div></div>
+  <div class="wa" id="wa" style="top:660px"><div class="wa-top"><img src="${WA}" alt="WhatsApp">WhatsApp</div><div class="wa-num" id="num">${esc(C.whatsapp)}</div></div>
+  <div class="center" style="top:1035px"><div class="portfolio" id="port">Portfolio: <b>${esc(C.portfolio)}</b></div></div>
+  <div class="center" style="top:1150px"><span class="btn" id="btn"><img src="${WA}" alt="">${esc(C.cta.button)}</span></div>
+  <div class="tap" id="tap" style="left:136px;top:1208px"></div><div class="ring" id="ring" style="left:136px;top:1208px"></div>`);
+
+// Animation
+const anims = []; const cues = [];
+const E = 'cubic-bezier(.2,.8,.2,1)'; const POP = 'cubic-bezier(.3,1.5,.5,1)';
+const add = (el, kf, start, dur, easing = E, fill = 'both', extra = {}) => { if (el) anims.push(el.animate(kf, { duration: dur * 1000, delay: start * 1000, fill, easing, ...extra })); };
+const $ = (s) => document.querySelector(s); const $$ = (s) => [...document.querySelectorAll(s)];
+const cue = (t, type) => cues.push({ t: +t.toFixed(3), type });
+const enter = (el, at, out) => { add(el, [{ opacity: 0, transform: 'scale(1.03)' }, { opacity: 1, transform: 'none' }], at, at === 0 ? 0.01 : 0.4, E); if (out) add(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.97)' }], out - 0.01, 0.35, 'ease-in', 'forwards'); };
+const wordsIn = (sel, at, step = 0.1) => $$(sel + ' .word').forEach((w, i) => add(w, [{ opacity: 0, transform: 'translateY(50px) scale(.85)' }, { opacity: 1, transform: 'none' }], at + i * step, 0.5, POP));
+const rise = (el, at, from = 260) => add(el, [{ opacity: 0, transform: `translateY(${from}px)` }, { opacity: 1, transform: 'none' }], at, 0.8, E);
+
+// Background drifts the whole time
+add($('#b1'), [{ transform: 'translate(0,0)' }, { transform: 'translate(260px,420px)' }], 0, DURATION, 'ease-in-out');
+add($('#b2'), [{ transform: 'translate(0,0)' }, { transform: 'translate(-300px,-500px)' }], 0, DURATION, 'ease-in-out');
+add($('#b3'), [{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(-120px,500px) scale(1.4)' }], 0, DURATION, 'ease-in-out');
+add($('#grid'), [{ backgroundPosition: '0 0' }, { backgroundPosition: '0 216px' }], 0, DURATION, 'linear');
+
+// 1. Hook
+enter($('#hook'), 0, T.hook[1]);
+wordsIn('#q', 0.1, 0.12); cue(0.12, 'pop');
+add($('#bar'), [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 0.6, 0.4);
+wordsIn('#line', 0.9, 0.06); cue(0.9, 'whoosh');
+rise($('#hookDevices'), 1.1, 420);
+cue(3, 'impact');
+
+// 2. Showcase
+enter($('#show'), T.show[0], T.show[1]);
+add($('#badge'), [{ opacity: 0, transform: 'translateY(-20px)' }, { opacity: 1, transform: 'none' }], 3.15, 0.45);
+wordsIn('#stitle', 3.25, 0.1);
+$$('#points .chip').forEach((c, i) => { add(c, [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], 3.95 + i * 0.3, 0.45, POP); cue(3.95 + i * 0.3, 'tick'); });
+rise($('#showDevices'), 3.1);
+add($('#showDevices'), [{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }], 3.9, 5.1, 'ease-in-out', 'forwards', { composite: 'add' });
+add($('#show .laptop .screen img'), [{ transform: 'translateY(0)' }, { transform: 'translateY(-2500px)' }], 4.2, 4.5, 'cubic-bezier(.45,0,.3,1)');
+add($('#show .phone .screen img'), [{ transform: 'translateY(0)' }, { transform: 'translateY(-2200px)' }], 4.4, 4.4, 'cubic-bezier(.45,0,.3,1)');
+cue(9, 'whoosh');
+
+// 3. Features
+enter($('#feat'), T.feat[0], T.feat[1]);
+FEAT.forEach((f, i) => {
+  const s = T.feat[0] + i * cut; const el = $(`#f${i}`);
+  add(el, [{ opacity: 0, transform: 'translateX(120px)' }, { opacity: 1, transform: 'none' }], s, 0.35, E);
+  if (i < FEAT.length - 1) add(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-140px)' }], s + cut - 0.05, 0.3, 'ease-in', 'forwards');
+  add(el.querySelector('.fnum'), [{ transform: 'scale(.3) rotate(-30deg)' }, { transform: 'none' }], s + 0.05, 0.45, POP);
+  add(el.querySelector('.fdetail'), [{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }], s + 0.25, 0.4);
+  const dev = el.querySelector('.phone, .laptop');
+  add(dev, [{ transform: 'translateY(90px) scale(.94)' }, { transform: 'none' }], s, 0.5, E);
+  add(dev, [{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }], s + 0.5, cut - 0.5, 'linear', 'forwards', { composite: 'add' });
+  add(el.querySelector('.sweep'), [{ opacity: 1, left: '-300px' }, { opacity: 1, left: '110%' }], s + 0.45, 0.7, 'ease-in-out', 'none');
+  add($(`#d${i}`), [{ background: 'rgba(255,255,255,.22)', transform: 'scale(1)' }, { background: '#22d3ee', transform: 'scale(1.35)' }], s, 0.3, E, 'forwards');
+  if (i > 0) cue(s, 'swish');
+});
+cue(19, 'whoosh');
+
+// 4. Pitch
+enter($('#pitch'), T.pitch[0], T.pitch[1]);
+wordsIn('#ptitle', 19.15, 0.08); cue(19.15, 'pop');
+rise($('#collage'), 19.25, 300);
+add($('#collage'), [{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }], 20, 4, 'ease-in-out', 'forwards', { composite: 'add' });
+$$('#pitch .svc').forEach((s, i) => { add(s, [{ opacity: 0, transform: 'translateX(-120px)' }, { opacity: 1, transform: 'none' }], 20.5 + i * 0.55, 0.5, POP); cue(20.5 + i * 0.55, 'tick'); });
+cue(24, 'whoosh');
+
+// 5. Call to action
+enter($('#cta'), T.cta[0]);
+add($('#role'), [{ opacity: 0, transform: 'translateY(-20px)' }, { opacity: 1, transform: 'none' }], 24.1, 0.4);
+wordsIn('#ctitle', 24.15, 0.09);
+add($('#csub'), [{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }], 24.8, 0.45);
+add($('#wa'), [{ opacity: 0, transform: 'translateY(80px) scale(.9)' }, { opacity: 1, transform: 'none' }], 25.0, 0.6, POP); cue(25.05, 'chime');
+add($('#port'), [{ opacity: 0 }, { opacity: 1 }], 25.6, 0.4);
+add($('#btn'), [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], 25.9, 0.5, POP); cue(25.9, 'pop');
+add($('#btn'), [{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], 26.6, 0.9, 'ease-in-out', 'none', { iterations: 3 });
+add($('#wa'), [{ boxShadow: '0 30px 80px rgba(0,0,0,.5),0 0 0 6px rgba(37,211,102,.35)' }, { boxShadow: '0 30px 80px rgba(0,0,0,.5),0 0 0 16px rgba(37,211,102,.15)' }, { boxShadow: '0 30px 80px rgba(0,0,0,.5),0 0 0 6px rgba(37,211,102,.35)' }], 26.2, 1.2, 'ease-in-out', 'none', { iterations: 2 });
+add($('#tap'), [{ opacity: 0, transform: 'scale(1.4)' }, { opacity: 1, transform: 'scale(1)', offset: .3 }, { opacity: 1, transform: 'scale(.8)', offset: .55 }, { opacity: 0, transform: 'scale(1)' }], 27.4, 0.9, 'ease-out', 'none'); cue(27.75, 'click');
+add($('#ring'), [{ opacity: .9, transform: 'scale(.6)' }, { opacity: 0, transform: 'scale(2.8)' }], 27.75, 0.6, 'ease-out', 'none');
+
+anims.forEach((a) => a.pause());
+window.AD = { duration: DURATION, fps: 30, cues, seek: (t) => anims.forEach((a) => { a.currentTime = t * 1000; }) };
+</script>
+</body></html>
