@@ -12,6 +12,11 @@ const DIR = __dirname;
 const config = JSON.parse(fs.readFileSync(path.join(DIR, 'config.json'), 'utf8'));
 const FRAMES = path.join(DIR, 'frames');
 const stillsOnly = process.argv.includes('--stills');
+// Voice-over: generate (or reuse) the lines, then pass their lengths to the template
+const VOICE = path.join(DIR, 'voice');
+if (config.voice && !process.argv.includes('--no-voice')) execFileSync('python3', [path.join(DIR, 'voice.py')], { stdio: 'inherit' });
+const durFile = path.join(VOICE, 'durations.json');
+if (config.voice && fs.existsSync(durFile)) config.voiceDurations = JSON.parse(fs.readFileSync(durFile, 'utf8'));
 
 (async () => {
   const browser = await chromium.launch();
@@ -45,7 +50,7 @@ const stillsOnly = process.argv.includes('--stills');
 
   fs.writeFileSync(path.join(DIR, 'cues.json'), JSON.stringify(cues, null, 1));
   const wav = path.join(DIR, 'soundtrack.wav');
-  execFileSync('python3', [path.join(DIR, 'soundtrack.py'), path.join(DIR, 'cues.json'), String(duration), wav], { stdio: 'inherit' });
+  execFileSync('python3', [path.join(DIR, 'soundtrack.py'), path.join(DIR, 'cues.json'), String(duration), wav, VOICE], { stdio: 'inherit' });
 
   const out = path.join(DIR, config.output);
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', path.join(FRAMES, 'f%04d.jpg'), '-i', wav,

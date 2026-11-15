@@ -86,6 +86,9 @@ const CHROME = { phone: { header: 'm-header.jpg', top: 100, nav: 'm-nav.jpg' }, 
 
 // ---- Animation helpers ----
 const anims = []; const cues = [];
+// Voice-over line lengths in seconds (from voice.py via render.cjs); each section lasts at least as long as its line
+const VO = C.voiceDurations || {};
+const say = (id, at) => { if (VO[id]) cues.push({ t: +at.toFixed(3), type: 'vo', id }); return at + (VO[id] || 0); };
 const E = 'cubic-bezier(.22,.8,.25,1)'; const POP = 'cubic-bezier(.3,1.45,.5,1)'; const GLIDE = 'cubic-bezier(.45,.05,.25,1)'; const SCROLL = 'cubic-bezier(.42,0,.3,1)';
 const add = (el, kf, start, dur, easing = E, fill = 'both', extra = {}) => { if (el) anims.push(el.animate(kf, { duration: dur * 1000, delay: start * 1000, fill, easing, ...extra })); };
 const $ = (s, r = document) => r.querySelector(s); const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -210,7 +213,7 @@ scene('cta', `
 // ---------- Motion ----------
 const T = {};
 // 1. Hook
-T.hook = [0, 4.6];
+T.hook = [0, Math.max(4.6, say('hook', 0.3) + 0.35)];
 enter($('#hook'), 0, T.hook[1]);
 wordsIn($('#q'), 0.1, 0.12); cue(0.12, 'pop');
 wordsIn($('#line'), 0.7, 0.06); cue(0.7, 'whoosh');
@@ -218,7 +221,7 @@ add($('#logo'), [{ opacity: 0, transform: 'scale(.6) translateY(30px)' }, { opac
 add($('#slogan'), [{ opacity: 0, letterSpacing: '.3em' }, { opacity: 1, letterSpacing: '.06em' }], 1.3, 0.7, E);
 rise($('#hookDevices'), 1.3, 380, 1.0);
 browser('hookPh', 'm-home').scroll(450, 2.4, 2.0);
-browser('hookLap', 'd-home').click(206, 359, 4.0);
+browser('hookLap', 'd-home').click(206, 359, T.hook[1] - 0.6);
 
 // 2. Showcase: both screens scroll calmly down the home page, pause, then scroll back up
 const s0 = T.hook[1];
@@ -230,7 +233,7 @@ rise($('#showDevices'), s0 + 0.1);
 const showLap = browser('showLap', 'd-home'); const showPh = browser('showPh', 'm-home');
 const lapEnd = showLap.sequence([{ click: [206, 359] }, { wait: 0.3 }, { scroll: 1200 }, { wait: 0.8 }, { scroll: 0, dur: 2.2 }], s0 + 0.2);
 const phEnd = showPh.sequence([{ wait: 0.4 }, { scroll: 800 }, { wait: 0.8 }, { scroll: 0, dur: 2.2 }], s0 + 1.0);
-T.show = [s0, Math.max(lapEnd, phEnd) + 0.4];
+T.show = [s0, Math.max(lapEnd + 0.4, phEnd + 0.4, say('show', s0 + 0.3) + 0.4)];
 enter($('#show'), T.show[0], T.show[1]); cue(T.show[0], 'impact');
 
 // 3. Features: the steps run one after another, so each cut lasts as long as its steps need
@@ -247,7 +250,8 @@ FEAT.forEach((f, i) => {
     add($('#featLap'), [{ opacity: 0, transform: 'translateX(160px) scale(.95)' }, { opacity: 1, transform: 'none' }], s + 0.15, 0.5, E);
     t += 0.5;
   }
-  t = (f.device === 'laptop' ? lap : ph).sequence(f.steps || [], t) + 0.2;
+  const voEnd = say(`f${i}`, s) + 0.3;
+  t = Math.max((f.device === 'laptop' ? lap : ph).sequence(f.steps || [], t) + 0.2, voEnd);
   featTimes.push([s, t]);
   add(el, [{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], s - 0.2, 0.45, E);
   if (i < FEAT.length - 1) add(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-16px)' }], t - 0.25, 0.25, 'ease-in', 'forwards');
@@ -258,17 +262,18 @@ T.feat = [f0, t + 0.2];
 add($('#feat'), [{ opacity: 1 }, { opacity: 0 }], T.feat[1] - 0.01, 0.4, 'ease-in', 'forwards');
 
 // 4. Pitch
-const p0 = T.feat[1]; T.pitch = [p0, p0 + 4.6];
+const p0 = T.feat[1]; T.pitch = [p0, Math.max(p0 + 4.6, say('pitch', p0 + 0.3) + 0.4)];
 enter($('#pitch'), p0, T.pitch[1]); cue(p0, 'whoosh');
 wordsIn($('#ptitle'), p0 + 0.15, 0.08); cue(p0 + 0.15, 'pop');
 rise($('#collage'), p0 + 0.2, 300);
 browser('pLap', 'admin-overview').click(234, 336, p0 + 1.6).go('admin-orders', p0 + 1.85);
 browser('pPhL', 'm-product').scroll(450, p0 + 1.0, 2.2);
 browser('pPhR', 'm-cart').scroll(500, p0 + 1.8, 2.2);
-$$('#pitch .svc').forEach((s, i) => { add(s, [{ opacity: 0, transform: 'translateX(-120px)' }, { opacity: 1, transform: 'none' }], p0 + 1.0 + i * 0.6, 0.55, POP); cue(p0 + 1.0 + i * 0.6, 'tick'); });
+const svcAt = (i) => p0 + 1.2 + i * Math.min(1.5, Math.max(0.6, (T.pitch[1] - p0 - 2.2) / 3));
+$$('#pitch .svc').forEach((s, i) => { add(s, [{ opacity: 0, transform: 'translateX(-120px)' }, { opacity: 1, transform: 'none' }], svcAt(i), 0.55, POP); cue(svcAt(i), 'tick'); });
 
 // 5. Call to action
-const c0 = T.pitch[1]; T.cta = [c0, c0 + 5.6];
+const c0 = T.pitch[1]; T.cta = [c0, Math.max(c0 + 5.6, say('cta', c0 + 0.3) + 1.2)];
 enter($('#cta'), c0); cue(c0, 'whoosh');
 add($('#role'), [{ opacity: 0, transform: 'translateY(-20px)' }, { opacity: 1, transform: 'none' }], c0 + 0.1, 0.45);
 wordsIn($('#ctitle'), c0 + 0.15, 0.09);

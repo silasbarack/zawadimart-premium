@@ -1,7 +1,9 @@
 """Generates the ad's soundtrack: an original, copyright-free electronic backing track plus
 sound effects at the cue times the video reports (cues.json, written by render.cjs).
 
-Usage: python3 soundtrack.py cues.json DURATION_SECONDS out.wav
+Usage: python3 soundtrack.py cues.json DURATION_SECONDS out.wav [VOICE_DIR]
+With VOICE_DIR, the voice-over lines (VOICE_DIR/<id>.wav, 44.1 kHz) are placed at their 'vo' cues
+and the music and effects are turned down underneath them.
 Needs only numpy.
 """
 import json
@@ -12,6 +14,7 @@ import numpy as np
 
 SR = 44100
 cues_path, duration, out_path = sys.argv[1], float(sys.argv[2]), sys.argv[3]
+voice_dir = sys.argv[4] if len(sys.argv) > 4 else None
 cues = json.load(open(cues_path))
 # Section times come from the video: the beat starts after the hook, the arpeggio runs under the features
 sec = {c['type']: c['t'] for c in cues if c['type'].startswith('music_')}
@@ -215,11 +218,37 @@ for c in cues:
     elif kind == 'swipe':
         place(fx, max(0, t0 - 0.05), whoosh(0.3, 1000, 5000), 0.12, pan=0.2)
 
+# --- Voice-over, with the music ducked underneath ---
+vo = np.zeros(n)
+if voice_dir:
+    for c in cues:
+        if c['type'] != 'vo':
+            continue
+        with wave.open(f"{voice_dir}/{c['id']}.wav") as w:
+            assert w.getframerate() == SR and w.getsampwidth() == 2
+            sig = np.frombuffer(w.readframes(w.getnframes()), '<i2').astype(float) / 32768
+            if w.getnchannels() == 2:
+                sig = sig.reshape(-1, 2).mean(axis=1)
+        i = int(c['t'] * SR)
+        sig = sig[: max(0, n - i)]
+        vo[i:i + len(sig)] += sig
+    peak = np.max(np.abs(vo))
+    if peak > 0:
+        vo /= peak
+    # Smoothed speech envelope -> gain that dips the backing to about 35% while he talks
+    env_vo = np.convolve(np.abs(vo), np.ones(int(0.25 * SR)) / int(0.25 * SR), mode='same')
+    env_vo = np.minimum(1, env_vo / (np.max(env_vo) * 0.25 + 1e-9))
+    duck_vo = 1 - 0.65 * env_vo
+    music *= duck_vo[:, None]
+    fx *= (1 - 0.4 * env_vo)[:, None]
+
 out = music * 0.75 + fx
+out[:, 0] += 0.95 * vo
+out[:, 1] += 0.95 * vo
 out /= max(1e-9, np.max(np.abs(out))) / 0.9
 with wave.open(out_path, 'wb') as w:
     w.setnchannels(2)
     w.setsampwidth(2)
     w.setframerate(SR)
     w.writeframes((out * 32767).astype('<i2').tobytes())
-print(f'soundtrack: {duration:.1f}s, {len(cues)} sound effects -> {out_path}')
+print(f'soundtrack: {duration:.1f}s, {sum(c["type"] == "vo" for c in cues)} voice lines, {len(cues)} cues -> {out_path}')

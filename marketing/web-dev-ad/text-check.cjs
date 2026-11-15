@@ -2,7 +2,7 @@
 const { chromium } = require('playwright'); const fs = require('fs'); const path = require('path');
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 (async () => { const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
-  await p.addInitScript((c) => { window.AD_CONFIG = c; }, config);
+  await p.addInitScript((c) => { window.AD_CONFIG = c; }, { ...config, voiceDurations: (() => { try { return JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'voice', 'durations.json'), 'utf8')); } catch { return {}; } })() });
   await p.goto('file://' + path.join(__dirname, 'ad.html')); await p.evaluate(() => document.fonts.ready); await p.evaluate(() => window.AD.seek(window.AD.duration - 0.2));
   const text = await p.evaluate(() => [...document.querySelectorAll('section')].map((s) => `[${s.id}] ` + [...s.querySelectorAll('.center, .fcut > div:first-child, .svc, .wa, .note')].map((e) => e.innerText.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' | ')).join('\n'));
   console.log(text);

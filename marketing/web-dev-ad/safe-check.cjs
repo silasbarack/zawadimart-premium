@@ -3,7 +3,7 @@
 const { chromium } = require('playwright'); const fs = require('fs'); const path = require('path');
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 (async () => { const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
-  await p.addInitScript((c) => { window.AD_CONFIG = c; }, config);
+  await p.addInitScript((c) => { window.AD_CONFIG = c; }, { ...config, voiceDurations: (() => { try { return JSON.parse(require('fs').readFileSync(require('path').join(__dirname, 'voice', 'durations.json'), 'utf8')); } catch { return {}; } })() });
   await p.goto('file://' + path.join(__dirname, 'ad.html')); await p.evaluate(() => document.fonts.ready);
   const T = await p.evaluate(() => window.AD.T); const times = { hook: T.hook[1] - 0.6, show: T.show[1] - 0.6, pitch: T.pitch[1] - 0.6, cta: T.cta[1] - 0.2 }; const out = [];
   for (const [id, t] of Object.entries(times)) { await p.evaluate((x) => window.AD.seek(x), t); out.push(...await p.evaluate((id) => {

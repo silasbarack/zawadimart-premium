@@ -25,7 +25,7 @@
  "features": [
   {
    "label": "Search & filters",
-   "detail": "Customers find what they want in seconds",
+   "detail": "Instant search with category filters, so customers find exactly what they want in seconds",
    "device": "phone",
    "page": "m-home",
    "steps": [
@@ -63,7 +63,7 @@
   },
   {
    "label": "Online product catalogues",
-   "detail": "Products, categories, prices and stock levels",
+   "detail": "Products neatly organised by category, with photos, prices, discounts and live stock levels",
    "device": "phone",
    "steps": [
     {
@@ -97,7 +97,7 @@
   },
   {
    "label": "Shopping cart & checkout",
-   "detail": "Prices and stock checked live before payment",
+   "detail": "Add to cart, change quantities and check out, with prices and stock confirmed before payment",
    "device": "phone",
    "steps": [
     {
@@ -140,7 +140,7 @@
   },
   {
    "label": "M-PESA payment integration",
-   "detail": "M-PESA STK Push prompt straight to the customer's phone",
+   "detail": "M-PESA STK Push sends a payment prompt straight to the customer's phone, plus Cash on Delivery",
    "device": "phone",
    "steps": [
     {
@@ -174,7 +174,7 @@
   },
   {
    "label": "Customer accounts",
-   "detail": "Sign-in with order history and delivery status",
+   "detail": "Customers sign in to see their order history, order status and delivery progress",
    "device": "phone",
    "steps": [
     {
@@ -205,7 +205,7 @@
   },
   {
    "label": "Order management",
-   "detail": "Admin dashboard for orders, products and customers",
+   "detail": "An admin dashboard to view and manage orders, products and customers in one place",
    "device": "laptop",
    "page": "admin-orders",
    "steps": [
@@ -303,5 +303,22 @@
  "scrollSpeed": {
   "phone": 300,
   "desktop": 450
+ },
+ "voice": {
+  "voice": "am_michael",
+  "speed": 1.0,
+  "lines": {
+   "hook": "Do you own a business? Imagine having a professional website, like this!",
+   "show": "This is Zawadi Mart, a live online shop I built. Modern, mobile friendly, and easy to use.",
+   "f0": "Customers can search and filter products, and find exactly what they want in seconds.",
+   "f1": "Products are neatly organised by category, with photos, prices and live stock levels.",
+   "f2": "Shoppers add to cart and check out smoothly, with prices and stock confirmed before they pay.",
+   "f3": "Payments are built in with Em-Pesa. An S T K push prompt goes straight to the customer's phone.",
+   "f4": "Customers get their own accounts, with order history and delivery tracking.",
+   "f5": "And you manage it all from one admin dashboard: orders, products and customers.",
+   "pitch": "Your business could have a website like this! Custom website development, payment integration, and ongoing technical support.",
+   "cta": "Let's build your business website! Message me on WhatsApp today, on plus two five four, one one seven, five six one, one nine two."
+  },
+  "note": "Lines are spelled the way they should sound (Zawadi Mart, Em-Pesa, S T K). Voices to try: am_michael, am_fenrir, am_onyx, bm_george."
  }
 }
