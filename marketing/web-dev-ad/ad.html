@@ -2,8 +2,9 @@
 <!--
   Web-development TikTok ad, 1080x1920, on a plain white background. Built from config.json
   (injected by render.cjs as window.AD_CONFIG) and full-length screenshots of the real site in
-  assets/screens. Device screens scroll, tap, click, type and change page like a real visit.
-  All motion uses paused Web Animations that render.cjs seeks frame by frame.
+  assets/screens. Device screens scroll at a calm, steady speed, tap, click, type and change page
+  like a real visit. Headings use colourful gradients in Roboto. All motion uses paused Web
+  Animations that render.cjs seeks frame by frame.
 -->
 <html><head><meta charset="utf-8"><style>
 @font-face{font-family:Roboto;src:url(assets/fonts/roboto-latin-400-normal.woff2) format('woff2');font-weight:400}
@@ -11,7 +12,7 @@
 @font-face{font-family:Roboto;src:url(assets/fonts/roboto-latin-700-normal.woff2) format('woff2');font-weight:700}
 @font-face{font-family:Roboto;src:url(assets/fonts/roboto-latin-900-normal.woff2) format('woff2');font-weight:900}
 @property --s{syntax:'<number>';inherits:true;initial-value:0}
-:root{--ink:#0f172a;--muted:#475569;--blue:#2563eb;--cyan:#06b6d4;--green:#25d366;--red:#dc2626}
+:root{--ink:#0f172a;--muted:#475569;--green:#25d366}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:1080px;height:1920px;overflow:hidden;background:#fff;font-family:Roboto,Arial,sans-serif;color:var(--ink)}
 
@@ -19,11 +20,13 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#fff;font-family
 /* Content is centred on x=500 so it stays clear of TikTok's right-hand buttons */
 .center{position:absolute;left:50px;right:130px;text-align:center}
 .word{display:inline-block;margin-right:.24em}
-.kicker{display:inline-block;padding:12px 24px;border-radius:999px;font-size:34px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#1d4ed8;background:#eff6ff;border:2px solid #bfdbfe}
-.chip{display:inline-block;margin:0 8px;padding:14px 26px;border-radius:999px;font-size:34px;font-weight:700;color:var(--ink);background:#f1f5f9;border:2px solid #e2e8f0}
-.slogan{font-size:40px;font-weight:700;letter-spacing:.06em;color:var(--ink)}
-.slogan b{color:var(--red)}
-.note{font-size:34px;font-weight:500;color:var(--muted)}
+/* Colourful gradient text: the gradient is twice as wide as the word and drifts slowly */
+.g{color:transparent;-webkit-background-clip:text;background-clip:text;background-size:200% 100%;padding-bottom:.06em}
+.kicker{display:inline-block;padding:12px 26px;border-radius:999px;font-size:34px;font-weight:900;letter-spacing:.03em;text-transform:uppercase;border:3px solid transparent}
+.chip{display:inline-block;margin:0 8px;padding:14px 26px;border-radius:999px;font-size:34px;font-weight:700;border:2px solid}
+.slogan{font-size:42px;font-weight:900;letter-spacing:.06em}
+.slogan i{font-style:normal;color:#cbd5e1;margin:0 .3em}
+.note{font-size:34px;font-weight:700}
 
 /* Devices */
 .phone{position:absolute;border-radius:calc(var(--w) * .13);background:#0b0d12;padding:calc(var(--w) * .033);box-shadow:0 0 0 3px #cbd5e1,0 30px 70px rgba(15,23,42,.28)}
@@ -38,7 +41,7 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#fff;font-family
 
 /* Interactions */
 .tap{position:absolute;width:var(--d);height:var(--d);margin:calc(var(--d) / -2) 0 0 calc(var(--d) / -2);border-radius:50%;background:rgba(15,23,42,.28);border:3px solid rgba(255,255,255,.95);box-shadow:0 4px 14px rgba(15,23,42,.35);opacity:0;z-index:6}
-.ring{position:absolute;width:var(--d);height:var(--d);margin:calc(var(--d) / -2) 0 0 calc(var(--d) / -2);border-radius:50%;border:4px solid rgba(37,99,235,.9);opacity:0;z-index:5}
+.ring{position:absolute;width:var(--d);height:var(--d);margin:calc(var(--d) / -2) 0 0 calc(var(--d) / -2);border-radius:50%;border:4px solid rgba(124,58,237,.85);opacity:0;z-index:5}
 .cursor{position:absolute;left:0;top:0;width:var(--d);height:calc(var(--d) * 1.42);margin:-2px 0 0 -3px;opacity:0;z-index:8;filter:drop-shadow(0 3px 5px rgba(0,0,0,.4));transform-origin:0 0}
 .cursor svg{display:block;width:100%;height:100%}
 .typed{position:absolute;display:flex;align-items:center;background:#f2f2f2;color:#242424;z-index:4;opacity:0;border-radius:99px}
@@ -46,12 +49,12 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#fff;font-family
 .caret{display:inline-block;width:2px;margin-left:1px;background:#cf0f12}
 
 /* Features */
-.fnum{display:inline-grid;place-items:center;width:84px;height:84px;margin-right:22px;border-radius:22px;background:linear-gradient(135deg,var(--blue),var(--cyan));color:#fff;font-size:40px;font-weight:900;vertical-align:middle}
-.flabel{display:inline-block;vertical-align:middle;font-size:58px;font-weight:900;letter-spacing:-1px;line-height:1.05;max-width:780px;text-align:left}
-.fdetail{margin-top:20px;font-size:35px;line-height:1.3;color:var(--muted);text-wrap:balance;max-width:860px}
+.fnum{display:inline-grid;place-items:center;width:84px;height:84px;margin-right:22px;border-radius:22px;color:#fff;font-size:40px;font-weight:900;vertical-align:middle;box-shadow:0 10px 24px rgba(124,58,237,.25)}
+.flabel{display:inline-block;vertical-align:middle;font-size:58px;font-weight:900;letter-spacing:-1px;line-height:1.08;max-width:780px;text-align:left}
+.fdetail{margin-top:18px;font-size:35px;line-height:1.3;color:var(--muted);text-wrap:balance;max-width:860px}
 /* Pitch */
-.svc{display:flex;align-items:center;gap:24px;margin:0 0 22px 50px;width:830px;padding:22px 30px;border-radius:24px;background:#f8fafc;border:2px solid #e2e8f0;box-shadow:0 10px 30px rgba(15,23,42,.08);font-size:44px;font-weight:700;text-align:left}
-.check{flex:none;position:relative;width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan))}
+.svc{display:flex;align-items:center;gap:24px;margin:0 0 22px 50px;width:830px;padding:22px 30px;border-radius:24px;background:#fff;border:2px solid #e2e8f0;border-left-width:10px;box-shadow:0 10px 30px rgba(15,23,42,.08);font-size:44px;font-weight:900;text-align:left}
+.check{flex:none;position:relative;width:62px;height:62px;border-radius:50%}
 .check::after{content:'';position:absolute;left:21px;top:11px;width:15px;height:28px;border:solid #fff;border-width:0 7px 7px 0;transform:rotate(45deg)}
 /* Call to action */
 .wa{position:absolute;left:50px;width:850px;border-radius:40px;background:#fff;color:var(--ink);padding:40px 40px 44px;text-align:center;border:4px solid var(--green);box-shadow:0 30px 70px rgba(15,23,42,.16)}
@@ -61,25 +64,29 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#fff;font-family
 .btn{display:inline-flex;align-items:center;gap:16px;padding:30px 40px;border-radius:999px;background:var(--green);color:#06301a;font-size:40px;font-weight:900;letter-spacing:.01em;box-shadow:0 20px 50px rgba(37,211,102,.35)}
 .btn img{width:56px;height:56px;filter:brightness(0) saturate(100%) invert(12%) sepia(40%) saturate(1800%) hue-rotate(110deg)}
 .portfolio{font-size:42px;font-weight:500;color:#334155}
-.portfolio b{color:#0369a1;font-weight:700}
+.portfolio b{font-weight:900}
 </style></head><body>
 <div id="root"></div>
 <script>
-const C = window.AD_CONFIG; const PAGES = C.pages;
+const C = window.AD_CONFIG; const PAGES = C.pages; const SPEED = C.scrollSpeed || { phone: 300, desktop: 450 };
 const root = document.getElementById('root');
 const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
-const words = (t) => esc(t).split(' ').map((w) => `<span class="word">${w}</span>`).join('');
+// Colour pairs, each dark enough to read on white. Gradients run A -> B -> A so they can drift.
+const PAIRS = [['#2563eb', '#7c3aed'], ['#db2777', '#ea580c'], ['#0891b2', '#059669'], ['#dc2626', '#d97706'], ['#7c3aed', '#db2777'], ['#0284c7', '#4f46e5']];
+const grad = (i) => { const [a, b] = PAIRS[((i % PAIRS.length) + PAIRS.length) % PAIRS.length]; return `linear-gradient(90deg,${a},${b},${a})`; };
+const flat = (i) => { const [a, b] = PAIRS[((i % PAIRS.length) + PAIRS.length) % PAIRS.length]; return `linear-gradient(135deg,${a},${b})`; };
+const gText = (t, i) => `<span class="g" style="background-image:${grad(i)}">${esc(t)}</span>`;
+const words = (t, offset = 0) => esc(t).split(' ').map((w, i) => `<span class="word g" style="background-image:${grad(i + offset)}">${w}</span>`).join('');
+const TINTS = [['#eff6ff', '#1d4ed8', '#bfdbfe'], ['#fdf2f8', '#be185d', '#fbcfe8'], ['#ecfdf5', '#047857', '#a7f3d0'], ['#fff7ed', '#c2410c', '#fed7aa']];
+const chip = (t, i) => { const [bg, fg, bd] = TINTS[i % TINTS.length]; return `<span class="chip" style="background:${bg};color:${fg};border-color:${bd}">${esc(t)}</span>`; };
+const kicker = (t, i, id = '') => `<span class="kicker" ${id ? `id="${id}"` : ''} style="background:linear-gradient(#fff,#fff) padding-box,${flat(i)} border-box">${gText(t, i)}</span>`;
 const CURSOR = `<svg viewBox="0 0 24 34" xmlns="http://www.w3.org/2000/svg"><path d="M2 2 L2 27 L8.5 21 L13 31.5 L17.5 29.5 L13 19.5 L22 19.5 Z" fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round"/></svg>`;
-// Sticky site header (top in page px, height) and the phone's bottom navigation, captured separately
-const CHROME = { phone: { header: 'm-header.jpg', top: 100, h: 169, nav: 'm-nav.jpg', navH: 64, view: 870 }, desktop: { header: 'd-header.jpg', top: 28, h: 97, view: 900 } };
-
-// Timeline (seconds)
-const T = { hook: [0, 4], show: [4, 10.5], feat: [10.5, 31.5], pitch: [31.5, 35.5], cta: [35.5, 41] };
-const DURATION = 41;
+// Sticky site header (top in page px) and the phone's bottom navigation, captured separately
+const CHROME = { phone: { header: 'm-header.jpg', top: 100, nav: 'm-nav.jpg' }, desktop: { header: 'd-header.jpg', top: 28 } };
 
 // ---- Animation helpers ----
 const anims = []; const cues = [];
-const E = 'cubic-bezier(.22,.8,.25,1)'; const POP = 'cubic-bezier(.3,1.45,.5,1)'; const GLIDE = 'cubic-bezier(.45,.05,.25,1)'; const SCROLL = 'cubic-bezier(.45,0,.25,1)';
+const E = 'cubic-bezier(.22,.8,.25,1)'; const POP = 'cubic-bezier(.3,1.45,.5,1)'; const GLIDE = 'cubic-bezier(.45,.05,.25,1)'; const SCROLL = 'cubic-bezier(.42,0,.3,1)';
 const add = (el, kf, start, dur, easing = E, fill = 'both', extra = {}) => { if (el) anims.push(el.animate(kf, { duration: dur * 1000, delay: start * 1000, fill, easing, ...extra })); };
 const $ = (s, r = document) => r.querySelector(s); const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const cue = (t, type) => cues.push({ t: +t.toFixed(3), type });
@@ -106,12 +113,14 @@ function browser(deviceId, firstPage) {
       html += `<img src="assets/screens/${ch.header}" alt="" style="z-index:2;top:max(0px, calc((${ch.top} - var(--s)) * ${k}px))">`;
       if (ch.nav) html += `<img src="assets/screens/${ch.nav}" alt="" style="z-index:2;top:auto;bottom:0">`;
     }
-    L.innerHTML = html; screen.appendChild(L); st.layer = L; st.s = 0; st.page = p;
-    if (at !== undefined) { add(L, [{ transform: 'translateX(101%)', boxShadow: '-20px 0 40px rgba(0,0,0,.25)' }, { transform: 'none', boxShadow: '0 0 0 rgba(0,0,0,0)' }], at, 0.45, E); cue(at, 'swipe'); }
+    L.innerHTML = html; screen.appendChild(L); st.layer = L; st.s = 0;
+    if (at !== undefined) { add(L, [{ transform: 'translateX(101%)', boxShadow: '-20px 0 40px rgba(0,0,0,.25)' }, { transform: 'none', boxShadow: '0 0 0 rgba(0,0,0,0)' }], at, 0.5, E); cue(at, 'swipe'); }
   };
   const api = {
     k,
-    scroll(to, at, dur = 1.1) { const from = st.s; add(st.layer, [{ '--s': from }, { '--s': to }], at, dur, SCROLL, 'forwards'); st.s = to; cue(at, 'scroll'); return api; },
+    // Calm scrolling: the duration follows the distance, at about SPEED page pixels a second
+    scrollTime(to) { return Math.max(1.2, Math.abs(to - st.s) / SPEED[kind]); },
+    scroll(to, at, dur) { dur = dur || api.scrollTime(to); const from = st.s; add(st.layer, [{ '--s': from }, { '--s': to }], at, dur, SCROLL, 'forwards'); st.s = to; cue(at, 'scroll'); return api; },
     go(name, at) { open(name, at); return api; },
     tap(x, y, at) {
       const L = st.layer; const d = Math.max(40, 46 * k * 1.5);
@@ -125,7 +134,7 @@ function browser(deviceId, firstPage) {
       if (!st.cursor) { st.cursor = document.createElement('div'); st.cursor.className = 'cursor'; st.cursor.style.setProperty('--d', `${Math.max(24, 30 * k * 2)}px`); st.cursor.innerHTML = CURSOR; screen.appendChild(st.cursor); }
       const cur = st.cursor; const tx = x * k, ty = (y - st.s) * k; const fx = st.cx, fy = st.cy;
       const kf = [{ opacity: 1, transform: `translate(${fx}px,${fy}px)` }, { opacity: 1, transform: `translate(${tx}px,${ty}px)` }];
-      if (!st.cursorShown) kf.unshift({ opacity: 0, transform: `translate(${fx}px,${fy}px)`, offset: 0 }), kf[1].offset = 0.15;
+      if (!st.cursorShown) { kf.unshift({ opacity: 0, transform: `translate(${fx}px,${fy}px)`, offset: 0 }); kf[1].offset = 0.15; }
       add(cur, kf, at - 0.9, 0.85, GLIDE, st.cursorShown ? 'forwards' : 'both');
       add(cur, [{ transform: `translate(${tx}px,${ty}px) scale(1)` }, { transform: `translate(${tx}px,${ty}px) scale(.8)` }, { transform: `translate(${tx}px,${ty}px) scale(1)` }], at - 0.05, 0.24, 'ease-in-out', 'none');
       const ring = document.createElement('i'); ring.className = 'ring'; ring.style.cssText = `--d:${Math.max(40, 50 * k * 2)}px;left:${tx}px;top:${ty}px`; screen.appendChild(ring);
@@ -137,11 +146,22 @@ function browser(deviceId, firstPage) {
       box.style.cssText = `left:${(x - w / 2 + 3) * k}px;top:calc((${y - h / 2 + 3} - var(--s)) * ${k}px);width:${(w - 12) * k}px;height:${(h - 6) * k}px;font-size:${15 * k}px;padding-left:${7 * k}px`;
       box.innerHTML = [...text].map((c) => `<span>${esc(c)}</span>`).join('') + `<i class="caret" style="height:${19 * k}px"></i>`; L.appendChild(box);
       add(box, [{ opacity: 0 }, { opacity: 1 }], at, 0.1, 'linear');
-      $$('span', box).forEach((c, j) => { add(c, [{ opacity: 0 }, { opacity: 1 }], at + 0.15 + j * 0.13, 0.03, 'linear'); cue(at + 0.15 + j * 0.13, 'key'); });
+      $$('span', box).forEach((c, j) => { add(c, [{ opacity: 0 }, { opacity: 1 }], at + 0.15 + j * 0.14, 0.03, 'linear'); cue(at + 0.15 + j * 0.14, 'key'); });
       add($('.caret', box), [{ opacity: 1 }, { opacity: 0 }], at, 0.5, 'steps(1)', 'both', { iterations: 4 });
       return api;
     },
-    run(steps, base) { steps.forEach((s) => { const t = base + s.at; if (s.go) api.go(s.go, t); else if (s.scroll !== undefined) api.scroll(s.scroll, t, s.dur); else if (s.tap) api.tap(s.tap[0], s.tap[1], t); else if (s.click) api.click(s.click[0], s.click[1], t); else if (s.type) api.type(s.type, s.field, t); }); return api; },
+    // Runs steps one after another from time t and returns when the last one has finished
+    sequence(steps, t) {
+      steps.forEach((s) => {
+        if (s.wait) t += s.wait;
+        else if (s.go) { api.go(s.go, t); t += 0.7; }
+        else if (s.scroll !== undefined) { const d = s.dur || api.scrollTime(s.scroll); api.scroll(s.scroll, t, d); t += d; }
+        else if (s.tap) { t += 0.45; api.tap(s.tap[0], s.tap[1], t); t += 0.4; }
+        else if (s.click) { t += 0.95; api.click(s.click[0], s.click[1], t); t += 0.45; }
+        else if (s.type) { api.type(s.type, s.field, t); t += 0.15 + s.type.length * 0.14 + 0.4; }
+      });
+      return t;
+    },
   };
   open(firstPage); return api;
 }
@@ -149,100 +169,107 @@ function browser(deviceId, firstPage) {
 // ---------- Scenes ----------
 // 1. Hook: question, promise, the ZawadiMart logo and slogan, then the live site on a laptop and phone
 scene('hook', `
-  <div class="center" style="top:190px"><div id="q" style="font-size:98px;font-weight:900;letter-spacing:-2px;line-height:1.02">${words(C.hook.question)}</div></div>
-  <div class="center" style="top:420px"><div id="line" style="font-size:56px;font-weight:700;line-height:1.15;color:#1e293b;text-wrap:balance">${words(C.hook.line)}</div></div>
+  <div class="center" style="top:190px"><div id="q" style="font-size:98px;font-weight:900;letter-spacing:-2px;line-height:1.04">${words(C.hook.question, 0)}</div></div>
+  <div class="center" style="top:425px"><div id="line" style="font-size:56px;font-weight:900;line-height:1.15;text-wrap:balance">${words(C.hook.line, 2)}</div></div>
   <div class="center" style="top:600px"><img id="logo" src="${C.brand.logo}" alt="" style="width:560px"></div>
-  <div class="center" style="top:790px"><div class="slogan" id="slogan">${esc(C.brand.slogan).replace(/•/g, '<b>•</b>')}</div></div>
+  <div class="center" style="top:790px"><div class="slogan" id="slogan">${C.brand.slogan.split('•').map((p, i) => gText(p.trim(), [3, 0, 2][i % 3])).join('<i>•</i>')}</div></div>
   <div id="hookDevices">${laptopHTML('hookLap', 640, 50, 930)}${phoneHTML('hookPh', 310, 600, 890)}</div>`);
 
 // 2. Showcase
 scene('show', `
-  <div class="center" style="top:180px"><span class="kicker" id="badge">${esc(C.showcase.badge)}</span></div>
-  <div class="center" style="top:270px"><div id="stitle" style="font-size:86px;font-weight:900;letter-spacing:-1.5px;line-height:1.04;text-wrap:balance">${words(C.showcase.title)}</div></div>
-  <div class="center" style="top:490px" id="points">${C.showcase.points.map((p) => `<span class="chip">${esc(p)}</span>`).join('')}</div>
-  <div class="center" style="top:600px"><div class="note" id="snote">${esc(C.responsiveNote)}</div></div>
+  <div class="center" style="top:180px">${kicker(C.showcase.badge, 1, 'badge')}</div>
+  <div class="center" style="top:275px"><div id="stitle" style="font-size:86px;font-weight:900;letter-spacing:-1.5px;line-height:1.06;text-wrap:balance">${words(C.showcase.title, 4)}</div></div>
+  <div class="center" style="top:495px" id="points">${C.showcase.points.map((p, i) => chip(p, i)).join('')}</div>
+  <div class="center" style="top:600px"><div class="note" id="snote">${gText(C.responsiveNote, 2)}</div></div>
   <div id="showDevices">${laptopHTML('showLap', 760, 40, 720)}${phoneHTML('showPh', 350, 590, 820)}</div>`);
 
 // 3. Features: one phone goes through a real shopping visit; the admin dashboard is on a laptop
-const FEAT = C.features; const cut = (T.feat[1] - T.feat[0]) / FEAT.length;
+const FEAT = C.features;
 scene('feat', `
-  <div class="center" style="top:180px"><span class="kicker">${esc(C.featuresKicker)}</span></div>
+  <div class="center" style="top:180px">${kicker(C.featuresKicker, 5)}</div>
   ${FEAT.map((f, i) => `<div class="fcut" id="f${i}" style="position:absolute;left:60px;right:130px;top:280px;opacity:0">
-     <div><span class="fnum">${String(i + 1).padStart(2, '0')}</span><span class="flabel">${esc(f.label)}</span></div>
+     <div><span class="fnum" style="background:${flat(i)}">${String(i + 1).padStart(2, '0')}</span><span class="flabel g" style="background-image:${grad(i)}">${esc(f.label)}</span></div>
      <div class="fdetail">${esc(f.detail)}</div></div>`).join('')}
   ${phoneHTML('featPh', 500, 250, 505)}${laptopHTML('featLap', 900, 50, 620, 'opacity:0')}`);
 
 // 4. Pitch
 scene('pitch', `
-  <div class="center" style="top:170px"><div id="ptitle" style="font-size:80px;font-weight:900;letter-spacing:-1px;line-height:1.05;text-wrap:balance">${words(C.pitch.headline)}</div></div>
+  <div class="center" style="top:170px"><div id="ptitle" style="font-size:80px;font-weight:900;letter-spacing:-1px;line-height:1.07;text-wrap:balance">${words(C.pitch.headline, 1)}</div></div>
   <div id="collage">${laptopHTML('pLap', 700, 150, 500)}${phoneHTML('pPhL', 250, 30, 590, 'transform:rotate(-6deg)')}${phoneHTML('pPhR', 250, 690, 610, 'transform:rotate(6deg)')}</div>
-  <div style="position:absolute;left:0;right:0;top:1140px">${C.pitch.services.map((s) => `<div class="svc"><span class="check"></span>${esc(s)}</div>`).join('')}</div>`);
+  <div style="position:absolute;left:0;right:0;top:1140px">${C.pitch.services.map((s, i) => `<div class="svc" style="border-left-color:${PAIRS[[0, 2, 1][i % 3]][0]}"><span class="check" style="background:${flat([0, 2, 1][i % 3])}"></span>${gText(s, [0, 2, 1][i % 3])}</div>`).join('')}</div>`);
 
 // 5. Call to action
 scene('cta', `
-  <div class="center" style="top:170px"><span class="kicker" id="role">${esc(C.role)}</span></div>
-  <div class="center" style="top:260px"><div id="ctitle" style="font-size:92px;font-weight:900;letter-spacing:-1.5px;line-height:1.03;text-wrap:balance">${words(C.cta.headline)}</div></div>
+  <div class="center" style="top:170px">${kicker(C.role, 2, 'role')}</div>
+  <div class="center" style="top:260px"><div id="ctitle" style="font-size:92px;font-weight:900;letter-spacing:-1.5px;line-height:1.05;text-wrap:balance">${words(C.cta.headline, 3)}</div></div>
   <div class="center" style="top:520px"><div id="csub" style="font-size:42px;color:var(--muted);text-wrap:balance">${esc(C.cta.sub)}</div></div>
   <div class="wa" id="wa" style="top:660px"><div class="wa-top"><img src="assets/whatsapp.svg" alt="WhatsApp">WhatsApp</div><div class="wa-num" id="num">${esc(C.whatsapp)}</div></div>
-  <div class="center" style="top:1035px"><div class="portfolio" id="port">Portfolio: <b>${esc(C.portfolio)}</b></div></div>
+  <div class="center" style="top:1035px"><div class="portfolio" id="port">Portfolio: <b class="g" style="background-image:${grad(5)}">${esc(C.portfolio)}</b></div></div>
   <div class="center" style="top:1150px"><span class="btn" id="btn"><img src="assets/whatsapp.svg" alt="">${esc(C.cta.button)}</span></div>`);
 
 // ---------- Motion ----------
+const T = {};
 // 1. Hook
+T.hook = [0, 4.6];
 enter($('#hook'), 0, T.hook[1]);
 wordsIn($('#q'), 0.1, 0.12); cue(0.12, 'pop');
 wordsIn($('#line'), 0.7, 0.06); cue(0.7, 'whoosh');
 add($('#logo'), [{ opacity: 0, transform: 'scale(.6) translateY(30px)' }, { opacity: 1, transform: 'scale(1.06)', offset: 0.7 }, { opacity: 1, transform: 'scale(1)' }], 1.0, 0.7, 'ease-out'); cue(1.05, 'pop');
 add($('#slogan'), [{ opacity: 0, letterSpacing: '.3em' }, { opacity: 1, letterSpacing: '.06em' }], 1.3, 0.7, E);
 rise($('#hookDevices'), 1.3, 380, 1.0);
-browser('hookPh', 'm-home').scroll(560, 2.4, 1.3);
-browser('hookLap', 'd-home').click(206, 359, 3.45);
-cue(4, 'impact');
+browser('hookPh', 'm-home').scroll(450, 2.4, 2.0);
+browser('hookLap', 'd-home').click(206, 359, 4.0);
 
-// 2. Showcase: both screens scroll down the home page, pause, go further, then come back up
-enter($('#show'), T.show[0], T.show[1]);
-add($('#badge'), [{ opacity: 0, transform: 'translateY(-20px)' }, { opacity: 1, transform: 'none' }], 4.15, 0.5);
-wordsIn($('#stitle'), 4.25, 0.1);
-$$('#points .chip').forEach((c, i) => { add(c, [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], 4.9 + i * 0.3, 0.5, POP); cue(4.9 + i * 0.3, 'tick'); });
-add($('#snote'), [{ opacity: 0 }, { opacity: 1 }], 5.9, 0.5);
-rise($('#showDevices'), 4.1);
-browser('showLap', 'd-home').click(206, 359, 5.0).scroll(950, 5.5, 1.4).scroll(1900, 7.3, 1.3).scroll(0, 9.1, 1.2);
-browser('showPh', 'm-home').scroll(1100, 5.1, 1.5).scroll(2300, 7.1, 1.4).scroll(0, 9.0, 1.3);
-cue(10.5, 'whoosh');
+// 2. Showcase: both screens scroll calmly down the home page, pause, then scroll back up
+const s0 = T.hook[1];
+add($('#badge'), [{ opacity: 0, transform: 'translateY(-20px)' }, { opacity: 1, transform: 'none' }], s0 + 0.15, 0.5);
+wordsIn($('#stitle'), s0 + 0.25, 0.1);
+$$('#points .chip').forEach((c, i) => { add(c, [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], s0 + 0.9 + i * 0.3, 0.5, POP); cue(s0 + 0.9 + i * 0.3, 'tick'); });
+add($('#snote'), [{ opacity: 0 }, { opacity: 1 }], s0 + 1.9, 0.5);
+rise($('#showDevices'), s0 + 0.1);
+const showLap = browser('showLap', 'd-home'); const showPh = browser('showPh', 'm-home');
+const lapEnd = showLap.sequence([{ click: [206, 359] }, { wait: 0.3 }, { scroll: 1200 }, { wait: 0.8 }, { scroll: 0, dur: 2.2 }], s0 + 0.2);
+const phEnd = showPh.sequence([{ wait: 0.4 }, { scroll: 800 }, { wait: 0.8 }, { scroll: 0, dur: 2.2 }], s0 + 1.0);
+T.show = [s0, Math.max(lapEnd, phEnd) + 0.4];
+enter($('#show'), T.show[0], T.show[1]); cue(T.show[0], 'impact');
 
-// 3. Features
-enter($('#feat'), T.feat[0], T.feat[1]);
-rise($('#featPh'), T.feat[0] + 0.05, 200, 0.7);
+// 3. Features: the steps run one after another, so each cut lasts as long as its steps need
+const f0 = T.show[1];
+enter($('#feat'), f0); cue(f0, 'whoosh');
+rise($('#featPh'), f0 + 0.05, 200, 0.7);
 const ph = browser('featPh', FEAT[0].page); const lap = browser('featLap', FEAT.find((f) => f.device === 'laptop')?.page || 'admin-orders');
-let phoneOut = false;
+let t = f0 + 0.3; let phoneOut = false; const featTimes = [];
 FEAT.forEach((f, i) => {
-  const s = T.feat[0] + i * cut; const el = $(`#f${i}`);
-  add(el, [{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], s + 0.05, 0.45, E);
-  if (i < FEAT.length - 1) add(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-16px)' }], s + cut - 0.25, 0.25, 'ease-in', 'forwards');
-  add($('.fnum', el), [{ transform: 'scale(.3) rotate(-30deg)' }, { transform: 'none' }], s + 0.08, 0.5, POP);
+  const s = t; const el = $(`#f${i}`);
   if (f.device === 'laptop' && !phoneOut) {
     phoneOut = true;
     add($('#featPh'), [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-160px) scale(.9)' }], s - 0.05, 0.4, 'ease-in', 'forwards');
     add($('#featLap'), [{ opacity: 0, transform: 'translateX(160px) scale(.95)' }, { opacity: 1, transform: 'none' }], s + 0.15, 0.5, E);
+    t += 0.5;
   }
-  (f.device === 'laptop' ? lap : ph).run(f.steps || [], s);
-  if (i > 0) cue(s, 'swish');
+  t = (f.device === 'laptop' ? lap : ph).sequence(f.steps || [], t) + 0.2;
+  featTimes.push([s, t]);
+  add(el, [{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], s - 0.2, 0.45, E);
+  if (i < FEAT.length - 1) add(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-16px)' }], t - 0.25, 0.25, 'ease-in', 'forwards');
+  add($('.fnum', el), [{ transform: 'scale(.3) rotate(-30deg)' }, { transform: 'none' }], s - 0.12, 0.5, POP);
+  if (i > 0) cue(s - 0.2, 'swish');
 });
-cue(T.feat[1], 'whoosh');
+T.feat = [f0, t + 0.2];
+add($('#feat'), [{ opacity: 1 }, { opacity: 0 }], T.feat[1] - 0.01, 0.4, 'ease-in', 'forwards');
 
 // 4. Pitch
-enter($('#pitch'), T.pitch[0], T.pitch[1]);
-wordsIn($('#ptitle'), 31.65, 0.08); cue(31.65, 'pop');
-rise($('#collage'), 31.7, 300);
-browser('pLap', 'admin-overview').click(234, 336, 33.0).go('admin-orders', 33.25);
-browser('pPhL', 'm-product').scroll(560, 32.6, 1.2);
-browser('pPhR', 'm-cart').scroll(600, 33.4, 1.2);
-$$('#pitch .svc').forEach((s, i) => { add(s, [{ opacity: 0, transform: 'translateX(-120px)' }, { opacity: 1, transform: 'none' }], 32.5 + i * 0.6, 0.55, POP); cue(32.5 + i * 0.6, 'tick'); });
-cue(T.cta[0], 'whoosh');
+const p0 = T.feat[1]; T.pitch = [p0, p0 + 4.6];
+enter($('#pitch'), p0, T.pitch[1]); cue(p0, 'whoosh');
+wordsIn($('#ptitle'), p0 + 0.15, 0.08); cue(p0 + 0.15, 'pop');
+rise($('#collage'), p0 + 0.2, 300);
+browser('pLap', 'admin-overview').click(234, 336, p0 + 1.6).go('admin-orders', p0 + 1.85);
+browser('pPhL', 'm-product').scroll(450, p0 + 1.0, 2.2);
+browser('pPhR', 'm-cart').scroll(500, p0 + 1.8, 2.2);
+$$('#pitch .svc').forEach((s, i) => { add(s, [{ opacity: 0, transform: 'translateX(-120px)' }, { opacity: 1, transform: 'none' }], p0 + 1.0 + i * 0.6, 0.55, POP); cue(p0 + 1.0 + i * 0.6, 'tick'); });
 
 // 5. Call to action
-const c0 = T.cta[0];
-enter($('#cta'), c0);
+const c0 = T.pitch[1]; T.cta = [c0, c0 + 5.6];
+enter($('#cta'), c0); cue(c0, 'whoosh');
 add($('#role'), [{ opacity: 0, transform: 'translateY(-20px)' }, { opacity: 1, transform: 'none' }], c0 + 0.1, 0.45);
 wordsIn($('#ctitle'), c0 + 0.15, 0.09);
 add($('#csub'), [{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }], c0 + 0.8, 0.5);
@@ -255,11 +282,19 @@ const ctaTap = document.createElement('i'); ctaTap.className = 'tap'; ctaTap.sty
 const ctaRing = document.createElement('i'); ctaRing.className = 'ring'; ctaRing.style.cssText = '--d:90px;left:136px;top:1208px;border-color:rgba(255,255,255,.9)'; $('#cta').appendChild(ctaRing);
 add(ctaTap, [{ opacity: 0, transform: 'scale(1.4)' }, { opacity: 1, transform: 'scale(1)', offset: .35 }, { opacity: 1, transform: 'scale(.8)', offset: .6 }, { opacity: 0, transform: 'scale(1)' }], c0 + 3.4, 1.0, 'ease-out', 'none'); cue(c0 + 3.8, 'click');
 add(ctaRing, [{ opacity: .9, transform: 'scale(.6)' }, { opacity: 0, transform: 'scale(2.8)' }], c0 + 3.8, 0.7, 'ease-out', 'none');
+const DURATION = +T.cta[1].toFixed(2);
+
+// The colours in every gradient heading drift gently for the whole ad
+$$('.g').forEach((el, i) => add(el, [{ backgroundPosition: '0% 50%' }, { backgroundPosition: '100% 50%' }], -(i % 5) * 0.7, 3.5, 'ease-in-out', 'both', { iterations: Infinity, direction: 'alternate' }));
 
 // Music sections for soundtrack.py
 cue(T.show[0], 'music_beat'); cue(T.feat[0], 'music_arp_on'); cue(T.pitch[1], 'music_arp_off');
 
+// Preview times for render.cjs --stills and the QA scripts
+const mid = ([a, b]) => +((a + b) / 2).toFixed(2);
+const stills = [1.5, 3.0, 4.3, T.show[0] + 1.5, mid(T.show), T.show[1] - 1.5, ...featTimes.flatMap(([a, b]) => [+(a + 0.6).toFixed(2), mid([a, b]), +(b - 0.3).toFixed(2)]), T.pitch[0] + 2, T.pitch[1] - 0.3, T.cta[0] + 2.5, DURATION - 0.2];
+
 anims.forEach((a) => a.pause());
-window.AD = { duration: DURATION, fps: 30, cues, seek: (t) => anims.forEach((a) => { a.currentTime = t * 1000; }) };
+window.AD = { duration: DURATION, fps: 30, cues, T, featTimes, stills, seek: (x) => anims.forEach((a) => { a.currentTime = x * 1000; }) };
 </script>
 </body></html>

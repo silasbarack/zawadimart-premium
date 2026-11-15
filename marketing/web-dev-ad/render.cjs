@@ -24,9 +24,9 @@ const stillsOnly = process.argv.includes('--stills');
 
   if (stillsOnly) {
     fs.mkdirSync(path.join(DIR, 'stills'), { recursive: true });
-    for (const t of [1.2, 2.2, 3.0, 3.6, 4.8, 6.2, 7.4, 8.7, 10.0, 11.4, 12.0, 13.5, 14.9, 16.0, 16.8, 18.1, 19.5, 20.0, 21.6, 22.0, 23.2, 25.0, 26.3, 27.0, 29.0, 30.0, 32.4, 33.6, 35.0, 37.2, 39.5, 40.8]) {
+    for (const t of await page.evaluate(() => window.AD.stills)) {
       await page.evaluate((x) => window.AD.seek(x), t);
-      await page.screenshot({ path: path.join(DIR, 'stills', `t${t.toFixed(1)}.png`) });
+      await page.screenshot({ path: path.join(DIR, 'stills', `t${t.toFixed(2).padStart(5, '0')}.png`) });
     }
     console.log('stills written to', path.join(DIR, 'stills'));
     await browser.close();
