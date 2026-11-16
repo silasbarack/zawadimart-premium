@@ -1,0 +1,11 @@
+{
+ "s1-a": false,
+ "s1-b": false,
+ "s2-a": false,
+ "s2-b": false,
+ "s3-a": false,
+ "s3-b": false,
+ "s3-c": false,
+ "audio/music.wav": true,
+ "audio/vo-scene4.wav": false
+}

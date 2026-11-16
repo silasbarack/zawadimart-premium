@@ -1,0 +1,22 @@
+{
+  "name": "kenya-promo",
+  "private": true,
+  "description": "45-second Kenyan promo for Barack Silas Mungai's website development services (Remotion)",
+  "scripts": {
+    "check-footage": "node tools/check-footage.cjs",
+    "music": "python3 tools/music.py public/audio/music.wav",
+    "record": "node tools/record-screens.cjs http://localhost:4301",
+    "studio": "node tools/check-footage.cjs && remotion studio",
+    "render": "node tools/check-footage.cjs && remotion render KenyaPromo out/Barack_Silas_Mungai_Web_Development_Promo.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.543",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.543"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  }
+}
