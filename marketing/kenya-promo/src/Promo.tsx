@@ -17,7 +17,7 @@ const Phone: React.FC<{ w: number; x: number; y: number; style?: React.CSSProper
 const Monitor: React.FC<{ w: number; x: number; y: number; style?: React.CSSProperties; children: React.ReactNode }> = ({ w, x, y, style, children }) => (
   <div className="monitor" style={{ ['--w' as string]: `${w}px`, width: w, left: x, top: y, ...style }}><div className="bezel"><div className="screen">{children}</div></div><div className="stand" /><div className="foot" /></div>
 );
-const Clip: React.FC<{ src: string; startAt: number }> = ({ src, startAt }) => <OffthreadVideo src={staticFile(src)} startFrom={s(startAt)} muted />;
+const Clip: React.FC<{ src: string; startAt: number }> = ({ src, startAt }) => <OffthreadVideo src={staticFile(src)} startFrom={s(startAt)} muted style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', objectFit: 'cover' }} />;
 
 const useIn = (delay = 0, dur = 0.6) => { const f = useCurrentFrame(); return interpolate(f, [s(delay), s(delay + dur)], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: ease }); };
 
@@ -43,13 +43,13 @@ const ScreenInsert: React.FC<{ ins: Insert }> = ({ ins }) => {
   return (
     <AbsoluteFill style={{ background: 'radial-gradient(1200px 1400px at 50% 40%, #fff7ed, #e7e5e4)' }}>
       <div style={{ position: 'absolute', inset: 0, transform: `scale(${push})`, opacity: appear }}>
-        {ins.kind === 'phone' ? <Phone w={560} x={220} y={190}><Clip src={ins.clip} startAt={ins.startAt} /></Phone> : null}
+        {ins.kind === 'phone' ? <Phone w={480} x={260} y={235}><Clip src={ins.clip} startAt={ins.startAt} /></Phone> : null}
         {ins.kind === 'both' ? <>
           <Monitor w={880} x={60} y={260}><Clip src={ins.clip} startAt={ins.startAt} /></Monitor>
           <Phone w={300} x={600} y={720}><Clip src={ins.second!.clip} startAt={ins.second!.startAt} /></Phone>
         </> : null}
       </div>
-      {ins.label ? <div className="demo" style={{ left: 240, top: 210 }}>{ins.label}</div> : null}
+      {ins.label ? <div className="demo" style={{ left: 280, top: 250 }}>{ins.label}</div> : null}
     </AbsoluteFill>
   );
 };
@@ -74,7 +74,7 @@ const Services: React.FC = () => {
         {SERVICES.slice(0, 2).map((sv, i) => <React.Fragment key={sv.title}>
           <div className="center" style={{ top: 270, left: 50 + i * 440, right: 'auto', width: 440 }}><div className="g" style={{ backgroundImage: grad(i), fontSize: 38, fontWeight: 900, lineHeight: 1.1 }}>{sv.title}</div></div>
           <Phone w={380} x={80 + i * 440} y={400}><Clip src={sv.clip!} startAt={sv.startAt!} /></Phone>
-          {sv.note ? <div className="demo" style={{ left: 100 + i * 440, top: 420 }}>{sv.note}</div> : null}
+          {sv.note ? <div className="demo" style={{ left: 110 + i * 440, top: 478 }}>{sv.note}</div> : null}
         </React.Fragment>)}
       </div>
       <div style={{ opacity: pB, transform: `translateY(${(1 - pB) * 60}px)` }}>
