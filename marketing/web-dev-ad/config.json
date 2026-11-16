@@ -317,8 +317,15 @@
    "f4": "Customers get their own accounts, with order history and delivery tracking.",
    "f5": "And you manage it all from one admin dashboard: orders, products and customers.",
    "pitch": "Your business could have a website like this! Custom website development, payment integration, and ongoing technical support.",
-   "cta": "Let's build your business website! Message me on WhatsApp today, on plus two five four, one one seven, five six one, one nine two."
+   "cta": "Let's build your business website! Message me on WhatsApp today, on plus two five four, one one seven, five six one, one nine two.",
+   "chat": "Just send me a message, and let's get your business online!"
   },
   "note": "Lines are spelled the way they should sound (Zawadi Mart, Em-Pesa, S T K). Voices to try: am_michael, am_fenrir, am_onyx, bm_george."
+ },
+ "chat": {
+  "avatar": "assets/avatar.jpg",
+  "time": "10:24",
+  "message": "Hello, I am interested in a business website quotation.",
+  "secondsPerChar": 0.09
  }
 }

@@ -215,6 +215,8 @@ for c in cues:
         place(fx, t0, k, 0.16)
     elif kind == 'scroll':
         place(fx, t0, whoosh(0.5, 400, 1600), 0.07, pan=-0.1)
+    elif kind == 'sent':
+        place(fx, t0, blip(700, 1400, 0.12, 0.05), 0.3)
     elif kind == 'swipe':
         place(fx, max(0, t0 - 0.05), whoosh(0.3, 1000, 5000), 0.12, pan=0.2)
 

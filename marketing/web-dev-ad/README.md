@@ -1,6 +1,6 @@
 # Web-development TikTok ad
 
-A 71-second, 1080×1920 ad with a male voice-over, on a plain white background that uses ZawadiMart as a portfolio piece to win website-development
+An 82-second, 1080×1920 ad with a male voice-over, on a plain white background that uses ZawadiMart as a portfolio piece to win website-development
 clients. Every screen in it is a real, full-length screenshot of the working site (`assets/screens/`),
 so the phone and laptop scroll, tap, click, type and change page like a real visit.
 
@@ -19,6 +19,7 @@ Edit `config.json`. Everything on screen comes from it:
 | `features` | The six feature cuts: label, one-line detail, `phone` or `laptop`, and `steps`, which run one after another: `go` (open a page), `scroll` (to a position), `tap`/`click` at `[x, y]`, `type` text into a `field`, and `wait` (seconds). Positions are in page CSS pixels. Each cut lasts as long as its steps need |
 | `scrollSpeed` | How fast pages scroll, in page pixels per second, for `phone` and `desktop`. Lower is calmer and makes the video longer |
 | `voice` | The voice-over: `voice` (Kokoro voice id, e.g. `am_michael`, `am_fenrir`, `am_onyx`, `bm_george`), `speed`, and one spoken line per section (`hook`, `show`, `f0`–`f5`, `pitch`, `cta`). Write words the way they should sound ("Zawadi Mart", "Em-Pesa"). Each section stays on screen at least as long as its line |
+| `chat` | The closing WhatsApp-style chat: profile photo (`avatar`), clock `time`, the client's `message` and typing speed (`secondsPerChar`). The chat is drawn in HTML, so no real conversation appears |
 | `output` | The file name of the finished video |
 
 Keep feature labels to about 28 characters so they stay on one line.
@@ -52,6 +53,7 @@ TikTok, Instagram Reels and WhatsApp Status accept.
   pick a sound from TikTok's licensed library.
 - `assets/whatsapp.svg`: the WhatsApp mark from Simple Icons (CC0), as published on Meta's WhatsApp
   brand page. Use it unaltered and only to point people to WhatsApp.
+- `assets/avatar.jpg`: the profile photo shown in the closing chat.
 - `assets/fonts/`: Roboto (Apache 2.0).
 
 ## Suggested TikTok caption

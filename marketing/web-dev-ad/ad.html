@@ -65,6 +65,42 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#fff;font-family
 .btn img{width:56px;height:56px;filter:brightness(0) saturate(100%) invert(12%) sepia(40%) saturate(1800%) hue-rotate(110deg)}
 .portfolio{font-size:42px;font-weight:500;color:#334155}
 .portfolio b{font-weight:900}
+
+/* WhatsApp-style chat on the closing phone (drawn in HTML; nothing from a real conversation) */
+.wa-pill{display:inline-flex;align-items:center;gap:18px;padding:16px 34px;border-radius:999px;background:#fff;border:4px solid var(--green);box-shadow:0 18px 40px rgba(15,23,42,.12);font-size:62px;font-weight:900;white-space:nowrap;font-variant-numeric:tabular-nums}
+.wa-pill img{width:70px;height:70px}
+.chat{position:absolute;inset:0;background:#0b141a;font-family:Roboto,Arial,sans-serif;color:#e9edef;overflow:hidden}
+.chat .wall{position:absolute;inset:0;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' fill='none' stroke='%23fff' stroke-width='2'%3E%3Ccircle cx='20' cy='22' r='9'/%3E%3Cpath d='M70 12l10 10-10 10-10-10z'/%3E%3Crect x='86' y='70' width='22' height='16' rx='4'/%3E%3Cpath d='M18 80c6-10 18-10 24 0'/%3E%3Cpath d='M58 96h20M68 86v20'/%3E%3Ccircle cx='100' cy='30' r='4'/%3E%3C/svg%3E")}
+.chat .sb{position:absolute;left:0;right:0;top:0;height:30px;background:#1f2c34;display:flex;align-items:center;justify-content:space-between;padding:0 22px 0 26px;font-size:14px;font-weight:500;z-index:3}
+.chat .hd{position:absolute;left:0;right:0;top:30px;height:62px;background:#1f2c34;display:flex;align-items:center;gap:8px;padding:0 8px;z-index:3}
+.chat .hd .av{width:40px;height:40px;border-radius:50%;object-fit:cover}
+.chat .hd .who{flex:1;min-width:0;margin-left:4px}
+.chat .hd .nm{font-size:17px;font-weight:500;white-space:nowrap}
+.chat .hd .st{position:relative;height:17px;font-size:13px;color:#8696a0}
+.chat .hd .st span{position:absolute;left:0;top:0;white-space:nowrap}
+.chat .ic{width:24px;height:24px;flex:none;fill:#e9edef}
+.chat .pill{position:absolute;left:50%;transform:translateX(-50%);border-radius:8px;background:#182229;font-size:12.5px;text-align:center}
+.chat .bar{position:absolute;left:6px;right:62px;bottom:10px;min-height:48px;border-radius:24px;background:#1f2c34;z-index:2;overflow:hidden}
+.chat .bar .ph{position:absolute;left:46px;top:14px;font-size:16.5px;color:#8696a0}
+.chat .bar .txt{position:absolute;left:46px;right:14px;top:13px;font-size:16.5px;line-height:21px;color:#e9edef;word-wrap:break-word}
+.chat .bar .txt span{opacity:0}
+.chat .bar .em{position:absolute;left:12px;bottom:12px}
+.chat .bar .rt{position:absolute;right:14px;bottom:12px;display:flex;gap:18px}
+.chat .fab{position:absolute;right:6px;bottom:10px;width:48px;height:48px;border-radius:50%;background:#00a884;z-index:2}
+.chat .fab svg{position:absolute;left:12px;top:12px;width:24px;height:24px;fill:#0b141a}
+.chat .kb{position:absolute;left:0;right:0;bottom:0;height:262px;background:#1b1c1e;z-index:4;padding:6px 3px 0}
+.chat .kb .sug{height:38px;display:flex;align-items:center;justify-content:space-around;color:#9aa0a6;font-size:15px}
+.chat .kb .row{display:flex;justify-content:center;gap:5px;margin-bottom:9px}
+.chat .kb .k{position:relative;width:35px;height:42px;border-radius:6px;background:#35363a;color:#e8eaed;font-size:20px;display:grid;place-items:center}
+.chat .kb .k.w{width:54px;font-size:15px;background:#2a2b2e}
+.chat .kb .k.sp{width:178px}
+.chat .kb .k b{position:absolute;inset:0;border-radius:6px;background:#8ab4f8;opacity:0}
+.chat .kb .gb{position:absolute;left:50%;bottom:6px;width:110px;height:4px;margin-left:-55px;border-radius:4px;background:#9aa0a6}
+.chat .msg{position:absolute;right:10px;max-width:290px;padding:6px 8px 8px 10px;border-radius:8px 0 8px 8px;background:#005c4b;font-size:15.5px;line-height:21px;opacity:0;transform-origin:100% 100%;z-index:1}
+.chat .msg::after{content:'';position:absolute;right:-8px;top:0;border:8px solid transparent;border-top-color:#005c4b;border-left-color:#005c4b;border-right-width:0;border-bottom-width:6px}
+.chat .msg .meta{float:right;margin:8px 0 -6px 12px;font-size:11px;color:rgba(233,237,239,.6);display:flex;align-items:center;gap:3px}
+.chat .msg .ticks{position:relative;width:18px;height:12px}
+.chat .msg .ticks svg{position:absolute;inset:0}
 </style></head><body>
 <div id="root"></div>
 <script>
@@ -210,6 +246,48 @@ scene('cta', `
   <div class="center" style="top:1035px"><div class="portfolio" id="port">Portfolio: <b class="g" style="background-image:${grad(5)}">${esc(C.portfolio)}</b></div></div>
   <div class="center" style="top:1150px"><span class="btn" id="btn"><img src="assets/whatsapp.svg" alt="">${esc(C.cta.button)}</span></div>`);
 
+
+// 6. WhatsApp chat: a client sends a first message to the number in the ad. Built in HTML with an
+//    illustrative message; none of the owner's real chats are shown.
+const ICON = {
+  back: '<path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20z"/>',
+  video: '<path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11z"/>',
+  call: '<path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/>',
+  more: '<circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>',
+  emoji: '<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-3.5-9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm7 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM12 17.5a5.5 5.5 0 0 0 5.1-3.5H6.9a5.5 5.5 0 0 0 5.1 3.5z" fill="#8696a0"/>',
+  clip: '<path d="M16.5 6v11.5a4 4 0 0 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 0 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 0 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6z" fill="#8696a0"/>',
+  cam: '<path d="M12 9a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8-3h-3.2L15 4H9L7.2 6H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z" fill="#8696a0"/>',
+  mic: '<path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5.3-3a5.3 5.3 0 0 1-10.6 0H5a7 7 0 0 0 6 6.9V21h2v-3.1a7 7 0 0 0 6-6.9z"/>',
+  send: '<path d="M2 21l21-9L2 3v7l15 2-15 2z"/>',
+  lock: '<path d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm3 8H9V7a3 3 0 0 1 6 0z" fill="#ffd279"/>',
+};
+const svg = (n, cls = 'ic', extra = '') => `<svg class="${cls}" viewBox="0 0 24 24" ${extra}>${ICON[n]}</svg>`;
+const TICK = (c) => `<svg viewBox="0 0 18 12"><path d="M1 6.5l3 3 6.5-8M7 9.5l1 1 7.5-9" fill="none" stroke="${c}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const KEYS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+const kbHTML = `<div class="kb" id="kb"><div class="sug"><span>${esc('Hello')}</span><span>|</span><span>I</span><span>|</span><span>Hi</span></div>
+  <div class="row">${[...KEYS[0]].map((c) => `<div class="k" data-k="${c}"><b></b>${c}</div>`).join('')}</div>
+  <div class="row">${[...KEYS[1]].map((c) => `<div class="k" data-k="${c}"><b></b>${c}</div>`).join('')}</div>
+  <div class="row"><div class="k w" data-k="shift"><b></b>⇧</div>${[...KEYS[2]].map((c) => `<div class="k" data-k="${c}"><b></b>${c}</div>`).join('')}<div class="k w"><b></b>⌫</div></div>
+  <div class="row"><div class="k w">?123</div><div class="k" data-k=","><b></b>,</div><div class="k sp" data-k=" "><b></b></div><div class="k" data-k="."><b></b>.</div><div class="k w" style="background:#8ab4f8;color:#202124">↵</div></div>
+  <div class="gb"></div></div>`;
+const CHAT = C.chat;
+const chatTime = CHAT.time || '10:24';
+scene('chat', `
+  <div class="center" style="top:165px"><span class="wa-pill" id="chatnum"><img src="assets/whatsapp.svg" alt="WhatsApp"><span>${esc(C.whatsapp)}</span></span></div>
+  ${phoneHTML('chatPh', 440, 280, 300)}
+  <div class="center" style="top:1220px"><div class="portfolio" id="port2" style="font-size:38px">Portfolio: <b class="g" style="background-image:${grad(5)}">${esc(C.portfolio)}</b></div></div>
+  <div class="center" style="top:1300px"><span class="btn" id="btn2"><img src="assets/whatsapp.svg" alt="">${esc(C.cta.button)}</span></div>`);
+$('#chatPh .screen').innerHTML = `<div class="chat"><div class="wall"></div>
+  <div class="sb"><span>${esc(chatTime)}</span><span style="display:flex;gap:6px;align-items:center"><svg width="16" height="12" viewBox="0 0 16 12"><path d="M1 11h2V8H1zm4 0h2V6H5zm4 0h2V3H9zm4 0h2V0h-2z" fill="#e9edef"/></svg><svg width="22" height="12" viewBox="0 0 22 12"><rect x=".5" y=".5" width="18" height="11" rx="2.5" fill="none" stroke="#e9edef"/><rect x="2" y="2" width="12" height="8" rx="1" fill="#e9edef"/><rect x="19.5" y="4" width="2" height="4" rx="1" fill="#e9edef"/></svg></span></div>
+  <div class="hd">${svg('back')}<img class="av" src="${esc(CHAT.avatar)}" alt=""><div class="who"><div class="nm">${esc(C.whatsapp)}</div><div class="st"><span id="stOn">online</span><span id="stTy" style="opacity:0;color:#00a884">typing…</span></div></div>${svg('video')}<span style="width:14px"></span>${svg('call')}<span style="width:8px"></span>${svg('more')}</div>
+  <div class="pill" style="top:104px;padding:5px 12px;color:#8696a0">Today</div>
+  <div class="pill" style="top:140px;width:330px;padding:8px 12px;color:#ffd279;line-height:17px">${svg('lock', 'x', 'style="width:12px;height:12px;vertical-align:-1px;margin-right:4px"')}Messages and calls are end-to-end encrypted. Only people in this chat can read, listen to, or share them.</div>
+  <div class="msg" id="msg">${esc(CHAT.message)}<span class="meta">${esc(chatTime)}<span class="ticks"><span id="tkG">${TICK('#8696a0')}</span><span id="tkB" style="opacity:0;position:absolute;inset:0">${TICK('#53bdeb')}</span></span></span></div>
+  <div id="inputArea" style="position:absolute;left:0;right:0;bottom:0;height:80px;z-index:2">
+    <div class="bar" id="bar"><span class="em">${svg('emoji')}</span><span class="ph" id="ph">Message</span><div class="txt" id="txt">${[...CHAT.message].map((c) => `<span>${esc(c)}</span>`).join('')}</div><span class="rt" id="rt">${svg('clip')}<span id="camIc">${svg('cam')}</span></span></div>
+    <div class="fab"><span id="micIc">${svg('mic', 'x')}</span><span id="sendIc" style="opacity:0">${svg('send', 'x')}</span></div></div>
+  ${kbHTML}</div>`;
+
 // ---------- Motion ----------
 const T = {};
 // 1. Hook
@@ -273,8 +351,8 @@ const svcAt = (i) => p0 + 1.2 + i * Math.min(1.5, Math.max(0.6, (T.pitch[1] - p0
 $$('#pitch .svc').forEach((s, i) => { add(s, [{ opacity: 0, transform: 'translateX(-120px)' }, { opacity: 1, transform: 'none' }], svcAt(i), 0.55, POP); cue(svcAt(i), 'tick'); });
 
 // 5. Call to action
-const c0 = T.pitch[1]; T.cta = [c0, Math.max(c0 + 5.6, say('cta', c0 + 0.3) + 1.2)];
-enter($('#cta'), c0); cue(c0, 'whoosh');
+const c0 = T.pitch[1]; T.cta = [c0, Math.max(c0 + 5.6, say('cta', c0 + 0.3) + 0.7)];
+enter($('#cta'), c0, T.cta[1]); cue(c0, 'whoosh');
 add($('#role'), [{ opacity: 0, transform: 'translateY(-20px)' }, { opacity: 1, transform: 'none' }], c0 + 0.1, 0.45);
 wordsIn($('#ctitle'), c0 + 0.15, 0.09);
 add($('#csub'), [{ opacity: 0, transform: 'translateY(20px)' }, { opacity: 1, transform: 'none' }], c0 + 0.8, 0.5);
@@ -287,7 +365,59 @@ const ctaTap = document.createElement('i'); ctaTap.className = 'tap'; ctaTap.sty
 const ctaRing = document.createElement('i'); ctaRing.className = 'ring'; ctaRing.style.cssText = '--d:90px;left:136px;top:1208px;border-color:rgba(255,255,255,.9)'; $('#cta').appendChild(ctaRing);
 add(ctaTap, [{ opacity: 0, transform: 'scale(1.4)' }, { opacity: 1, transform: 'scale(1)', offset: .35 }, { opacity: 1, transform: 'scale(.8)', offset: .6 }, { opacity: 0, transform: 'scale(1)' }], c0 + 3.4, 1.0, 'ease-out', 'none'); cue(c0 + 3.8, 'click');
 add(ctaRing, [{ opacity: .9, transform: 'scale(.6)' }, { opacity: 0, transform: 'scale(2.8)' }], c0 + 3.8, 0.7, 'ease-out', 'none');
-const DURATION = +T.cta[1].toFixed(2);
+
+// 6. WhatsApp chat: tap the message box, the keyboard opens, the client types and sends, then the ticks turn blue
+const b0 = T.cta[1];
+const chatPh = $('#chatPh'); const scr = $('.screen', chatPh); const KB = 262;
+enter($('#chat'), b0); cue(b0, 'whoosh');
+add($('#chatnum'), [{ opacity: 0, transform: 'translateY(-30px) scale(.9)' }, { opacity: 1, transform: 'none' }], b0 + 0.15, 0.6, POP); cue(b0 + 0.2, 'chime');
+rise(chatPh, b0 + 0.05, 320, 0.8);
+add($('#port2'), [{ opacity: 0 }, { opacity: 1 }], b0 + 0.6, 0.45);
+add($('#btn2'), [{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'none' }], b0 + 0.8, 0.55, POP);
+const chatVoEnd = say('chat', b0 + 0.5);
+// Tap the message box; the keyboard slides up and the input bar rides on top of it
+const tapAt = b0 + 1.5;
+const chatTap = document.createElement('i'); chatTap.className = 'tap'; chatTap.style.cssText = `--d:52px;left:130px;top:${scr.clientHeight - 34}px;z-index:9`; scr.appendChild(chatTap);
+add(chatTap, [{ opacity: 0, transform: 'scale(1.5)' }, { opacity: 1, transform: 'scale(1)', offset: 0.4 }, { opacity: 1, transform: 'scale(.75)', offset: 0.6 }, { opacity: 0, transform: 'scale(1)' }], tapAt - 0.4, 0.9, 'ease-out', 'none'); cue(tapAt, 'tap');
+add($('#kb', scr), [{ transform: `translateY(${KB}px)` }, { transform: 'none' }], tapAt + 0.1, 0.35, E);
+add($('#inputArea', scr), [{ transform: 'none' }, { transform: `translateY(${-KB}px)` }], tapAt + 0.1, 0.35, E);
+// Typing at a realistic thumb speed, with the pressed keys lighting up
+const chars = $$('#txt span', scr); const typeAt = tapAt + 0.75; const per = CHAT.secondsPerChar || 0.09;
+add($('#ph', scr), [{ opacity: 1 }, { opacity: 0 }], typeAt, 0.05, 'linear', 'forwards');
+add($('#micIc', scr), [{ opacity: 1 }, { opacity: 0 }], typeAt, 0.15, 'linear', 'forwards');
+add($('#sendIc', scr), [{ opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'none' }], typeAt, 0.2, POP, 'forwards');
+add($('#camIc', scr), [{ opacity: 1 }, { opacity: 0 }], typeAt, 0.15, 'linear', 'forwards');
+const lineH = 21; const tops = chars.map((c) => c.offsetTop); let lines = 1;
+const bar = $('#bar', scr);
+chars.forEach((c, j) => {
+  const at = typeAt + j * per + (/[ ,.]/.test(CHAT.message[j - 1] || '') ? 0.05 : 0);
+  add(c, [{ opacity: 0 }, { opacity: 1 }], at, 0.02, 'linear', 'forwards');
+  const ch = CHAT.message[j]; const key = $(`.k[data-k="${ch === ch.toUpperCase() && ch !== ch.toLowerCase() ? 'shift' : ch.toLowerCase()}"] b`, scr);
+  if (ch !== ch.toLowerCase()) { const k2 = $(`.k[data-k="${ch.toLowerCase()}"] b`, scr); if (k2) add(k2, [{ opacity: 0.55 }, { opacity: 0 }], at, 0.18, 'ease-out', 'none'); }
+  if (key) add(key, [{ opacity: 0.55 }, { opacity: 0 }], at - 0.02, 0.18, 'ease-out', 'none');
+  cue(at, 'key');
+  const ln = Math.round((tops[j] - tops[0]) / lineH) + 1;
+  if (ln > lines) { lines = ln; add(bar, [{ minHeight: `${48 + (ln - 2) * lineH}px` }, { minHeight: `${48 + (ln - 1) * lineH}px` }], at, 0.06, 'linear', 'forwards'); }
+});
+const typedEnd = typeAt + chars.length * per + 0.4;
+// Send: the bubble pops in above the input, the box clears, grey ticks then blue, then "typing…"
+const sendAt = typedEnd + 0.3;
+const sendTap = document.createElement('i'); sendTap.className = 'tap'; sendTap.style.cssText = `--d:52px;left:${scr.clientWidth - 30}px;top:${scr.clientHeight - KB - 34}px;z-index:9`; scr.appendChild(sendTap);
+add(sendTap, [{ opacity: 0, transform: 'scale(1.5)' }, { opacity: 1, transform: 'scale(1)', offset: 0.4 }, { opacity: 1, transform: 'scale(.75)', offset: 0.6 }, { opacity: 0, transform: 'scale(1)' }], sendAt - 0.4, 0.9, 'ease-out', 'none'); cue(sendAt, 'tap');
+chars.forEach((c) => add(c, [{ opacity: 1 }, { opacity: 0 }], sendAt + 0.05, 0.02, 'linear', 'forwards'));
+add(bar, [{ minHeight: `${48 + (lines - 1) * lineH}px` }, { minHeight: '48px' }], sendAt + 0.05, 0.05, 'linear', 'forwards');
+add($('#ph', scr), [{ opacity: 0 }, { opacity: 1 }], sendAt + 0.05, 0.1, 'linear', 'forwards');
+add($('#sendIc', scr), [{ opacity: 1 }, { opacity: 0 }], sendAt + 0.05, 0.1, 'linear', 'forwards');
+add($('#micIc', scr), [{ opacity: 0 }, { opacity: 1 }], sendAt + 0.05, 0.1, 'linear', 'forwards');
+add($('#camIc', scr), [{ opacity: 0 }, { opacity: 1 }], sendAt + 0.05, 0.1, 'linear', 'forwards');
+const msg = $('#msg', scr); msg.style.bottom = `${KB + 70}px`;
+add(msg, [{ opacity: 0, transform: 'translateY(30px) scale(.85)' }, { opacity: 1, transform: 'none' }], sendAt + 0.05, 0.35, POP, 'forwards'); cue(sendAt + 0.1, 'sent');
+add($('#tkB', scr), [{ opacity: 0 }, { opacity: 1 }], sendAt + 1.1, 0.25, 'linear', 'forwards');
+add($('#stOn', scr), [{ opacity: 1 }, { opacity: 0 }], sendAt + 1.7, 0.2, 'linear', 'forwards');
+add($('#stTy', scr), [{ opacity: 0 }, { opacity: 1 }], sendAt + 1.7, 0.2, 'linear', 'forwards');
+add($('#btn2'), [{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], sendAt + 0.6, 1.0, 'ease-in-out', 'none', { iterations: 2 });
+T.chat = [b0, Math.max(sendAt + 3.0, chatVoEnd + 1.0)];
+const DURATION = +T.chat[1].toFixed(2);
 
 // The colours in every gradient heading drift gently for the whole ad
 $$('.g').forEach((el, i) => add(el, [{ backgroundPosition: '0% 50%' }, { backgroundPosition: '100% 50%' }], -(i % 5) * 0.7, 3.5, 'ease-in-out', 'both', { iterations: Infinity, direction: 'alternate' }));
@@ -297,7 +427,7 @@ cue(T.show[0], 'music_beat'); cue(T.feat[0], 'music_arp_on'); cue(T.pitch[1], 'm
 
 // Preview times for render.cjs --stills and the QA scripts
 const mid = ([a, b]) => +((a + b) / 2).toFixed(2);
-const stills = [1.5, 3.0, 4.3, T.show[0] + 1.5, mid(T.show), T.show[1] - 1.5, ...featTimes.flatMap(([a, b]) => [+(a + 0.6).toFixed(2), mid([a, b]), +(b - 0.3).toFixed(2)]), T.pitch[0] + 2, T.pitch[1] - 0.3, T.cta[0] + 2.5, DURATION - 0.2];
+const stills = [1.5, 3.0, 4.3, T.show[0] + 1.5, mid(T.show), T.show[1] - 1.5, ...featTimes.flatMap(([a, b]) => [+(a + 0.6).toFixed(2), mid([a, b]), +(b - 0.3).toFixed(2)]), T.pitch[0] + 2, T.pitch[1] - 0.3, T.cta[0] + 2.5, T.cta[1] - 0.3, T.chat[0] + 1.2, +(typeAt + 1.5).toFixed(2), +(typedEnd - 0.2).toFixed(2), +(sendAt + 0.6).toFixed(2), DURATION - 0.2];
 
 anims.forEach((a) => a.pause());
 window.AD = { duration: DURATION, fps: 30, cues, T, featTimes, stills, seek: (x) => anims.forEach((a) => { a.currentTime = x * 1000; }) };
