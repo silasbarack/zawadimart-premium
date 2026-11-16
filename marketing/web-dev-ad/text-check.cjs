@@ -8,7 +8,7 @@ const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), '
   console.log(text);
   const num = await p.evaluate(() => document.getElementById('num').textContent); const port = await p.evaluate(() => document.querySelector('#port b').textContent);
   console.log('\nWhatsApp number on screen :', JSON.stringify(num), num === '+254 117 561 192' ? 'EXACT MATCH' : 'MISMATCH');
-  const end = await p.evaluate(() => ({ pill: document.querySelector('#chatnum span').textContent, header: document.querySelector('#chatPh .nm').textContent, visible: getComputedStyle(document.getElementById('chat')).opacity, port: document.querySelector('#port2 b').textContent }));
+  const end = await p.evaluate(() => ({ pill: document.querySelector('#chatnum span').textContent, header: document.querySelector('#chatPh .nm').textContent, visible: getComputedStyle(document.getElementById('chat')).opacity, port: document.querySelector('#port b').textContent }));
   console.log('Closing chat: number pill  :', JSON.stringify(end.pill), end.pill === '+254 117 561 192' ? 'EXACT MATCH' : 'MISMATCH');
   console.log('Closing chat: chat header  :', JSON.stringify(end.header), end.header === '+254 117 561 192' ? 'EXACT MATCH' : 'MISMATCH');
   console.log('Closing chat: portfolio    :', JSON.stringify(end.port), end.port === 'baracksilasmungai.onrender.com' ? 'EXACT MATCH' : 'MISMATCH', '| chat scene opacity at the end:', end.visible);
